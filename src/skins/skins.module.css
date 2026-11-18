@@ -1,0 +1,65 @@
+.root {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1.1;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  overflow: hidden;
+}
+.root[data-size='hero'] {
+  font-size: clamp(36px, 11vw, 96px);
+  letter-spacing: -0.02em;
+}
+.root[data-size='card'] {
+  font-size: clamp(22px, 6vw, 36px);
+}
+.root[data-size='mini'] {
+  font-size: 22px;
+}
+
+.currency {
+  font-size: 0.6em;
+  margin-right: 0.12em;
+  opacity: 0.8;
+}
+
+.frac {
+  font-size: 0.6em;
+  opacity: 0.75;
+}
+
+/* ── 주행거리계 ── */
+.odometer {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.wheel {
+  display: inline-block;
+  height: 1em;
+  line-height: 1em;
+  overflow: hidden;
+  position: relative;
+  /* 위·아래 끝을 살짝 흐리게: 굴러가는 느낌 */
+  mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+}
+.wheel[data-frac] {
+  font-size: 0.6em;
+  opacity: 0.75;
+}
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+.strip span {
+  height: 1em;
+  text-align: center;
+}
+
+.sep {
+  display: inline-block;
+}
