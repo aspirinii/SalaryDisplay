@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { snapshot } from './engine'
 import { useSettings } from './store/settings'
 import { useDisplay, type PeriodKey } from './store/display'
 import { useNow } from './hooks/useNow'
 import { useAppearance } from './hooks/useAppearance'
 import { useMilestone } from './hooks/useMilestone'
+import { useFullscreen, useIdle } from './hooks/useFullscreen'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Counter } from './components/Counter'
 import { won } from './format'
@@ -19,6 +20,24 @@ export default function App() {
   const display = useDisplay((s) => s.display)
   const [settingsOpen, setSettingsOpen] = useState(false)
   useAppearance(display)
+  const fullscreen = useFullscreen()
+  const toggleFullscreen = fullscreen.toggle
+  const idle = useIdle(fullscreen.active)
+
+  // F 키로 전체화면 (입력 중이거나 설정이 열려 있으면 무시)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (settingsOpen || e.metaKey || e.ctrlKey || e.altKey) return
+      const t = e.target as HTMLElement
+      if (t.closest('input, select, textarea, [contenteditable]')) return
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault()
+        void toggleFullscreen()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [settingsOpen, toggleFullscreen])
   // 연속 모드만 매 프레임, 나머지는 초 단위 갱신 (CPU 절약)
   const now = useNow(display.updateMode === 'continuous' ? 'frame' : 'second')
   const snap = snapshot(settings, now)
@@ -34,15 +53,25 @@ export default function App() {
   const counterProps = { ratePerSecond: snap.ratePerSecond, status: snap.status, options: display }
 
   return (
-    <main className={css.main}>
+    <main className={css.main} data-focus={fullscreen.active} data-idle={idle}>
       <header className={css.top}>
         <span className={css.status} data-status={snap.status}>
           {STATUS_LABEL[snap.status]}
           {snap.status !== 'off' && <span className={css.rate}>+{won(snap.ratePerSecond, 2)}/초</span>}
         </span>
-        <button className={css.gear} onClick={() => setSettingsOpen(true)} aria-label="설정 열기">
-          ⚙︎ 설정
-        </button>
+        <span className={css.actions}>
+          <button
+            className={css.gear}
+            onClick={() => void fullscreen.toggle()}
+            aria-label={fullscreen.active ? '전체화면 끝내기' : '전체화면'}
+            title="전체화면 (F)"
+          >
+            {fullscreen.active ? '⤡ 나가기' : '⛶ 전체화면'}
+          </button>
+          <button className={css.gear} onClick={() => setSettingsOpen(true)} aria-label="설정 열기">
+            ⚙︎ 설정
+          </button>
+        </span>
       </header>
 
       {hero && (

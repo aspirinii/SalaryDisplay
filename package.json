@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "TZ=Asia/Seoul vitest run",
-    "test:watch": "TZ=Asia/Seoul vitest"
+    "test:watch": "TZ=Asia/Seoul vitest",
+    "icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -28,6 +29,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
     "vite": "^6.3.5",
+    "vite-plugin-pwa": "^1.3.0",
     "vitest": "^3.2.7"
   }
 }

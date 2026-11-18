@@ -10,7 +10,7 @@
   overflow: hidden;
 }
 .root[data-size='hero'] {
-  font-size: clamp(36px, 11vw, 96px);
+  font-size: var(--hero-size, clamp(36px, 11vw, 96px));
   letter-spacing: -0.02em;
 }
 .root[data-size='card'] {
@@ -241,7 +241,7 @@
   --water: color-mix(in srgb, var(--accent) 26%, transparent);
 }
 .tank[data-size='hero'] {
-  height: clamp(180px, 34vw, 300px);
+  height: var(--tank-hero-height, clamp(180px, 34vw, 300px));
   display: flex;
   align-items: flex-end;
   padding: 20px 24px;
