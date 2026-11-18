@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // 새 버전을 받으면 앱이 알림을 띄우고 새로고침 (src/components/UpdatePrompt.tsx)
+      // 등록은 앱에서 직접 (src/components/UpdatePrompt.tsx)
       registerType: 'prompt',
       injectRegister: false,
       includeAssets: ['icons/favicon-32.png', 'icons/apple-touch-icon.png'],
@@ -32,6 +32,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
+        // 새 서비스 워커가 바로 넘겨받음 → 다음 새로고침부터 새 버전.
+        // 지금 열려 있는 화면에는 앱이 알림을 띄워 새로고침 (UpdatePrompt)
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
       },
     }),
   ],

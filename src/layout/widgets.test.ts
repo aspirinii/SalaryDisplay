@@ -147,3 +147,11 @@ describe('편집 세션 (되돌리기)', () => {
     expect(editorReducer(start, { type: 'end' })).toEqual(initialEditor)
   })
 })
+
+describe('축하 단위', () => {
+  it('100원·1,000원 단위도 저장 가능, 이상한 값은 기본값', () => {
+    expect(sanitizeDisplay({ widgets: [], milestoneUnit: 100 }).milestoneUnit).toBe(100)
+    expect(sanitizeDisplay({ widgets: [], milestoneUnit: 1000 }).milestoneUnit).toBe(1000)
+    expect(sanitizeDisplay({ widgets: [], milestoneUnit: 777 }).milestoneUnit).toBe(10_000)
+  })
+})

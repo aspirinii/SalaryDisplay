@@ -2,6 +2,7 @@ import { SKINS } from '../skins/registry'
 import {
   ACCENTS,
   FONTS,
+  MILESTONE_UNITS,
   useDisplay,
   type AccentId,
   type DisplayOptions,
@@ -206,9 +207,11 @@ export function LookSection({ open, onEditLayout }: { open: boolean; onEditLayou
               onChange={(e) => update({ milestoneUnit: Number(e.target.value) as DisplayOptions['milestoneUnit'] })}
               aria-label="축하 단위"
             >
-              <option value={10000}>1만 원마다</option>
-              <option value={50000}>5만 원마다</option>
-              <option value={100000}>10만 원마다</option>
+              {MILESTONE_UNITS.map((u) => (
+                <option key={u} value={u}>
+                  {u >= 10_000 ? `${u / 10_000}만 원마다` : `${u.toLocaleString('ko-KR')}원마다`}
+                </option>
+              ))}
             </select>
           </span>
         </label>

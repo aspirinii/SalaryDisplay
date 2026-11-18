@@ -15,6 +15,10 @@ export type ThemeId = 'system' | 'dark' | 'light' | 'contrast'
 export type AccentId = 'default' | 'mono' | 'silver' | 'gray' | 'blue' | 'gold' | 'pink' | 'purple' | 'red'
 export type FontId = 'system' | 'mono' | 'rounded' | 'serif'
 
+/** 축하 단위 (원) */
+export const MILESTONE_UNITS = [100, 1_000, 10_000, 50_000, 100_000] as const
+export type MilestoneUnit = (typeof MILESTONE_UNITS)[number]
+
 export interface DisplayOptions {
   /** 화면 위젯 배치 (순서 = 표시 순서) */
   widgets: Widget[]
@@ -30,7 +34,7 @@ export interface DisplayOptions {
   font: FontId
   /** 오늘 금액이 단위를 넘을 때 축하 표시 */
   milestones: boolean
-  milestoneUnit: 10_000 | 50_000 | 100_000
+  milestoneUnit: MilestoneUnit
   /** 첫 실행 안내를 마쳤거나 건너뜀 */
   onboarded: boolean
 }
@@ -90,7 +94,7 @@ export function sanitizeDisplay(raw: unknown): DisplayOptions {
     accent: pick(r.accent, Object.keys(ACCENTS) as AccentId[], d.accent),
     font: pick(r.font, Object.keys(FONTS) as FontId[], d.font),
     milestones: typeof r.milestones === 'boolean' ? r.milestones : d.milestones,
-    milestoneUnit: pick(r.milestoneUnit, [10_000, 50_000, 100_000] as const, d.milestoneUnit),
+    milestoneUnit: pick(r.milestoneUnit, MILESTONE_UNITS, d.milestoneUnit),
     onboarded: legacy || r.onboarded === true,
   }
 }
