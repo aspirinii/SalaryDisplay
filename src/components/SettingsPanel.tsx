@@ -12,8 +12,9 @@ import {
 } from '../engine'
 import { parseHHMM } from '../engine/time'
 import { useSettings } from '../store/settings'
+import { SCHEDULE_PRESETS, applySchedulePreset, type SchedulePreset } from '../store/schedulePresets'
 import { won } from '../format'
-import { DisplaySection } from './DisplaySection'
+import { LookSection } from './DisplaySection'
 import css from './SettingsPanel.module.css'
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'] as const
@@ -23,12 +24,6 @@ const PAY_TYPES: { value: PayType; label: string }[] = [
   { value: 'hourly', label: '시급' },
 ]
 
-const PRESETS: { label: string; start: string; end: string; days: Weekday[] }[] = [
-  { label: '9–6', start: '09:00', end: '18:00', days: [1, 2, 3, 4, 5] },
-  { label: '10–7', start: '10:00', end: '19:00', days: [1, 2, 3, 4, 5] },
-  { label: '8–5', start: '08:00', end: '17:00', days: [1, 2, 3, 4, 5] },
-  { label: '주4일 (월–목 9–6)', start: '09:00', end: '18:00', days: [1, 2, 3, 4] },
-]
 
 const hm = (minutes: number) => {
   const h = Math.floor(minutes / 60)
@@ -36,7 +31,28 @@ const hm = (minutes: number) => {
   return m ? `${h}시간 ${m}분` : `${h}시간`
 }
 
-export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+export type SettingsTab = 'pay' | 'look' | 'advanced'
+
+const TABS: [SettingsTab, string][] = [
+  ['pay', '💰 급여·근무'],
+  ['look', '🎨 꾸미기'],
+  ['advanced', '⚙️ 고급'],
+]
+
+interface Props {
+  /** 열린 탭 (null = 닫힘) */
+  tab: SettingsTab | null
+  onTab: (tab: SettingsTab) => void
+  onClose: () => void
+  onEditLayout: () => void
+}
+
+export function SettingsPanel({ tab, onTab, onClose, onEditLayout }: Props) {
+  const open = tab !== null
+  // 닫히는 동안에도 마지막 탭 내용을 보여 줌 (슬라이드 아웃 중 빈 화면 방지)
+  const [shown, setShown] = useState<SettingsTab>('pay')
+  if (tab && tab !== shown) setShown(tab)
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -54,13 +70,29 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
             ✕
           </button>
         </header>
-        <div className={css.body}>
-          <DisplaySection open={open} />
-          <PaySection />
-          <ScheduleSection />
-          <PeriodSection />
-          <HolidaySection />
-          <ResetSection />
+        <nav className={css.tabs} role="tablist" aria-label="설정 분류">
+          {TABS.map(([id, label]) => (
+            <button key={id} role="tab" aria-selected={shown === id} onClick={() => onTab(id)}>
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className={css.body} role="tabpanel">
+          {shown === 'pay' && (
+            <>
+              <PaySection />
+              <ScheduleSection />
+            </>
+          )}
+          {shown === 'look' && <LookSection open={open} onEditLayout={onEditLayout} />}
+          {shown === 'advanced' && (
+            <>
+              <RateSection />
+              <PeriodSection />
+              <HolidaySection />
+              <ResetSection />
+            </>
+          )}
         </div>
       </aside>
     </>
@@ -124,9 +156,26 @@ function PaySection() {
         </div>
       </dl>
 
-      {settings.payType !== 'hourly' && (
+      {settings.payType === 'hourly' && (
+        <p className={css.hint}>시급은 근무한 초마다 시급 ÷ 3600씩 쌓입니다. 이번 달 근무 {hm(monthHours * 60)}.</p>
+      )}
+    </section>
+  )
+}
+
+/* ───────────── 초당 단가 기준 (고급) ───────────── */
+
+function RateSection() {
+  const settings = useSettings((s) => s.settings)
+  const update = useSettings((s) => s.update)
+  const period = monthPeriod(settings, new Date())
+  const monthHours = paidSecondsBetween(settings, period.start, period.end) / 3600
+  if (settings.payType === 'hourly') return null
+  return (
+    <section className={css.section}>
+      <h3>초당 단가 기준</h3>
         <fieldset className={css.field}>
-          <legend>초당 단가 기준</legend>
+          <legend>월급을 초 단위로 나누는 기준 (보통은 그대로 두면 됨)</legend>
           <label className={css.radio}>
             <input
               type="radio"
@@ -159,10 +208,6 @@ function PaySection() {
             </span>
           </label>
         </fieldset>
-      )}
-      {settings.payType === 'hourly' && (
-        <p className={css.hint}>시급은 근무한 초마다 시급 ÷ 3600씩 쌓입니다. 이번 달 근무 {hm(monthHours * 60)}.</p>
-      )}
     </section>
   )
 }
@@ -178,12 +223,7 @@ function ScheduleSection() {
   const order: Weekday[] = settings.weekStartsOn === 1 ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6]
   const weekMinutes = order.reduce((sum: number, d) => sum + paidMinutesOfDay(settings.schedule[d], settings.breaksPaidByDefault), 0)
 
-  const applyPreset = (p: (typeof PRESETS)[number]) => {
-    for (const d of [0, 1, 2, 3, 4, 5, 6] as Weekday[]) {
-      const cur = settings.schedule[d]
-      setDay(d, { ...cur, enabled: p.days.includes(d), work: { start: p.start, end: p.end } })
-    }
-  }
+  const applyPreset = (p: SchedulePreset) => update({ schedule: applySchedulePreset(settings.schedule, p) })
 
   return (
     <section className={css.section}>
@@ -191,7 +231,7 @@ function ScheduleSection() {
         근무 스케줄 <small>주 {hm(weekMinutes)}</small>
       </h3>
       <div className={css.chips}>
-        {PRESETS.map((p) => (
+        {SCHEDULE_PRESETS.map((p) => (
           <button key={p.label} onClick={() => applyPreset(p)}>
             {p.label}
           </button>

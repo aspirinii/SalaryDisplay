@@ -8,10 +8,15 @@ export function useAppearance({ theme, accent, font }: Pick<DisplayOptions, 'the
     if (theme === 'system') delete root.dataset.theme
     else root.dataset.theme = theme
 
-    const color = ACCENTS[accent].color
-    // 고대비 테마는 자체 강조색 유지
-    if (color && theme !== 'contrast') root.style.setProperty('--accent', color)
-    else root.style.removeProperty('--accent')
+    // 배경별 강조색: CSS가 테마에 맞는 쪽을 골라 씀 (index.css)
+    const { dark, light } = ACCENTS[accent]
+    for (const [name, value] of [
+      ['--accent-dark', dark],
+      ['--accent-light', light],
+    ] as const) {
+      if (value) root.style.setProperty(name, value)
+      else root.style.removeProperty(name)
+    }
 
     const stack = FONTS[font].stack
     if (stack) root.style.setProperty('--num-font', stack)

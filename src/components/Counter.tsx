@@ -2,14 +2,17 @@ import type { WorkStatus } from '../engine'
 import { quantize } from '../skins/digits'
 import { skinById } from '../skins/registry'
 import { useTweened } from '../hooks/useTweened'
-import type { DisplayOptions } from '../store/display'
+import type { DisplayOptions, SkinId } from '../store/display'
+
+/** 카운터가 쓰는 옵션: 위젯별 스킨·소수점 + 전역 갱신 방식 */
+export type CounterOptions = Pick<DisplayOptions, 'decimals' | 'updateMode' | 'step'> & { skin: SkinId }
 
 interface Props {
   value: number
   ratePerSecond: number
   status: WorkStatus
   progress: number
-  options: DisplayOptions
+  options: CounterOptions
   size: 'hero' | 'card' | 'mini'
 }
 

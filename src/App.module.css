@@ -1,13 +1,16 @@
 .main {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 16px 48px;
+  padding: 24px 16px 48px;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .status {
@@ -16,6 +19,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 .status::before {
   content: '';
@@ -31,6 +35,17 @@
   background: #e0a526;
 }
 
+.rate {
+  margin-left: 4px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
 .gear {
   font: inherit;
   font-size: 14px;
@@ -40,76 +55,35 @@
   border-radius: 8px;
   padding: 6px 12px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.cards {
-  display: grid;
-  gap: 12px;
-  margin-top: 16px;
-}
-.cards[data-layout='hero'] {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-
-.hero {
-  margin-top: 28px;
-  padding: 8px 0 12px;
+/* 좁은 화면: 버튼은 아이콘만 */
+@media (max-width: 480px) {
+  .btnText {
+    display: none;
+  }
+  .gear {
+    padding: 6px 10px;
+  }
 }
 
-.rate {
-  margin-left: 4px;
+.empty {
+  color: var(--muted);
+  text-align: center;
+  margin-top: 40px;
+}
+.empty button {
+  font: inherit;
   color: var(--accent);
-  font-variant-numeric: tabular-nums;
+  background: none;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.label {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.progress {
-  height: 6px;
-  margin-top: 16px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.progress div {
-  height: 100%;
-  background: var(--accent);
-}
-
-.meta {
-  color: var(--muted);
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── 마일스톤 축하 ── */
-.hero[data-celebrate='true'],
-.card[data-celebrate='true'] {
-  animation: celebrate 0.9s ease-out 2;
-}
-@keyframes celebrate {
-  0% {
-    transform: scale(1);
-  }
-  30% {
-    transform: scale(1.03);
-    filter: drop-shadow(0 0 18px var(--accent));
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
+/* ── 마일스톤 축하 알림 ── */
 .toast {
   position: fixed;
   left: 50%;
@@ -133,24 +107,9 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .hero[data-celebrate='true'],
-  .card[data-celebrate='true'],
-  .toast {
-    animation: none;
-  }
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
 /* ── 전체화면(대시보드) 모드 ── */
 .main[data-focus='true'] {
-  max-width: 1200px;
-  min-height: 100vh;
-  min-height: 100dvh;
+  max-width: 1400px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -163,6 +122,7 @@
   left: 16px;
   right: 16px;
   transition: opacity 0.4s;
+  z-index: 4;
 }
 .main[data-idle='true'] {
   cursor: none;
@@ -170,4 +130,10 @@
 .main[data-idle='true'] .top {
   opacity: 0;
   pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
 }

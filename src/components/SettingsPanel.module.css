@@ -346,6 +346,7 @@
   margin-left: 0;
 }
 .skinPreview {
+  overflow: hidden;
   height: 32px;
   width: 100%;
   display: flex;
@@ -372,4 +373,79 @@
 }
 .sheet .swatch[aria-checked='true'] {
   box-shadow: 0 0 0 2px var(--fg);
+}
+
+/* ── 탭 ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sheet .tabs button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.sheet .tabs button[aria-selected='true'] {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── 화면 편집 바로가기 ── */
+.sheet .editLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  border-radius: 12px;
+}
+.editLink > span:first-child {
+  font-size: 22px;
+  color: var(--accent);
+}
+.editLink strong {
+  display: block;
+  font-size: 15px;
+}
+.sheet .editLink small {
+  margin-left: 0;
+}
+
+/* ── 색 견본 묶음 ── */
+.swatchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.swatchLabel {
+  width: 44px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.sheet .swatch[data-neutral] {
+  box-shadow: 0 0 0 1px var(--muted);
+}
+.sheet .swatch[data-neutral][aria-checked='true'],
+.sheet .swatch[aria-checked='true'] {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--fg);
+}
+.sheet .chipButton {
+  margin-top: 8px;
+  border-radius: 999px;
+}
+.sheet .chipButton[aria-pressed='true'] {
+  border-color: var(--fg);
 }

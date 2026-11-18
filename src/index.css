@@ -1,11 +1,12 @@
-/* 테마: data-theme 없음/system = 기기 설정 따름, dark/light/contrast = 고정 */
+/* 테마: data-theme 없음/system = 기기 설정 따름, dark/light/contrast = 고정
+   강조색: 루트에 --accent-dark / --accent-light가 있으면 배경에 맞는 쪽을 씀 */
 :root {
   --bg: #f7f7f5;
   --fg: #1a1a1a;
   --muted: #6b6b6b;
   --card: #ffffff;
   --border: #e4e4e0;
-  --accent: #0f8a5f;
+  --accent: var(--accent-light, #0f8a5f);
   --flip-bg: #ecece8;
   color-scheme: light;
   font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif;
@@ -18,7 +19,7 @@
     --muted: #9a9a9a;
     --card: #1b1e1c;
     --border: #2c302d;
-    --accent: #3fd39a;
+    --accent: var(--accent-dark, #3fd39a);
     --flip-bg: #232724;
     color-scheme: dark;
   }
@@ -30,7 +31,7 @@
   --muted: #9a9a9a;
   --card: #1b1e1c;
   --border: #2c302d;
-  --accent: #3fd39a;
+  --accent: var(--accent-dark, #3fd39a);
   --flip-bg: #232724;
   color-scheme: dark;
 }
@@ -41,7 +42,7 @@
   --muted: #d0d0d0;
   --card: #0a0a0a;
   --border: #ffffff;
-  --accent: #00ff9c;
+  --accent: var(--accent-dark, #00ff9c);
   --flip-bg: #1a1a1a;
   color-scheme: dark;
 }

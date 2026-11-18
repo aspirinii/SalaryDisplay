@@ -32,3 +32,9 @@ export function monthPeriod(settings: Settings, now: Date): Interval {
   }
   return { start: paydayOf(y, m - 1, settings.payday).getTime(), end: thisStart.getTime() }
 }
+
+/** 올해: 1월 1일 ~ 다음 해 1월 1일 */
+export function yearPeriod(now: Date): Interval {
+  const y = now.getFullYear()
+  return { start: new Date(y, 0, 1).getTime(), end: new Date(y + 1, 0, 1).getTime() }
+}

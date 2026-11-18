@@ -193,6 +193,19 @@ describe('스냅샷', () => {
     expect(snap.secondsUntilOff).toBe(8 * H)
     expect(snap.weekTotal).toBeCloseTo(NOV_RATE * 40 * H, 4)
     expect(snap.monthTotal).toBeCloseTo(3_000_000, 4)
+    expect(snap.year).toBe(0) // year 옵션 꺼짐
+  })
+
+  it('올해: 1~10월 월급 10번 + 11월 누적, 1년 전체는 월급 × 12', () => {
+    const snap = snapshot(s, at(2026, 11, 18, 10), { year: true })
+    expect(snap.year).toBeCloseTo(3_000_000 * 10 + snap.month, 2)
+    expect(snap.yearTotal).toBeCloseTo(3_000_000 * 12, 2)
+  })
+
+  it('설정이 바뀌면 캐시도 새로 계산', () => {
+    const a = snapshot(s, at(2026, 11, 18, 10))
+    const b = snapshot({ ...s, amount: 6_000_000 }, at(2026, 11, 18, 10))
+    expect(b.monthTotal).toBeCloseTo(a.monthTotal * 2, 4)
   })
 
   it('퇴근 후에는 오늘 금액 고정, 진행률 100%', () => {

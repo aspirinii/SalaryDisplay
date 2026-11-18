@@ -67,6 +67,10 @@ export interface EarningsSnapshot {
   weekTotal: number
   /** 이번 달 기간 전체 근무를 마쳤을 때 금액 */
   monthTotal: number
+  /** 올해 누적 (snapshot의 year 옵션을 켰을 때만, 아니면 0) */
+  year: number
+  /** 올해 전체 근무 시 금액 (year 옵션) */
+  yearTotal: number
   /** 0~1 */
   todayProgress: number
   /** 오늘 마지막 유급 구간 종료까지 남은 초 (근무 끝났으면 0) */

@@ -1,54 +1,68 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { UpdateMode } from '../skins/digits'
+import {
+  defaultWidgets,
+  sanitizeWidgets,
+  SKIN_IDS,
+  widgetsFromLegacy,
+  type SkinId,
+  type Widget,
+} from '../layout/widgets'
 
-export type SkinId = 'countup' | 'odometer' | 'flip' | 'slot' | 'floating' | 'tank'
-export type PeriodKey = 'today' | 'week' | 'month'
-export type LayoutId = 'stack' | 'hero'
+export type { SkinId, PeriodKey } from '../layout/widgets'
 export type ThemeId = 'system' | 'dark' | 'light' | 'contrast'
-export type AccentId = 'default' | 'blue' | 'gold' | 'pink' | 'purple' | 'red'
+export type AccentId = 'default' | 'mono' | 'silver' | 'gray' | 'blue' | 'gold' | 'pink' | 'purple' | 'red'
 export type FontId = 'system' | 'mono' | 'rounded' | 'serif'
 
 export interface DisplayOptions {
-  skin: SkinId
-  /** 소수점 자리수 */
+  /** 화면 위젯 배치 (순서 = 표시 순서) */
+  widgets: Widget[]
+  /** 위젯에 스킨 지정이 없을 때 */
+  defaultSkin: SkinId
+  /** 위젯에 소수점 지정이 없을 때 */
   decimals: 0 | 1 | 2 | 3
   updateMode: UpdateMode
   /** updateMode = 'step'일 때 단위 (원) */
   step: 10 | 100 | 1000
-  layout: LayoutId
-  /** layout = 'hero'일 때 크게 보여줄 기간 */
-  heroPeriod: PeriodKey
   theme: ThemeId
   accent: AccentId
   font: FontId
   /** 오늘 금액이 단위를 넘을 때 축하 표시 */
   milestones: boolean
   milestoneUnit: 10_000 | 50_000 | 100_000
+  /** 첫 실행 안내를 마쳤거나 건너뜀 */
+  onboarded: boolean
 }
 
 export const defaultDisplay = (): DisplayOptions => ({
-  skin: 'odometer',
+  widgets: defaultWidgets(),
+  defaultSkin: 'odometer',
   decimals: 2,
   updateMode: 'continuous',
   step: 100,
-  layout: 'hero',
-  heroPeriod: 'today',
   theme: 'system',
   accent: 'default',
   font: 'system',
   milestones: true,
   milestoneUnit: 10_000,
+  onboarded: false,
 })
 
-/** 'default'는 테마 기본 강조색. 나머지는 밝은/어두운 배경 모두에서 읽히는 중간 채도 */
-export const ACCENTS: Record<AccentId, { label: string; color: string | null }> = {
-  default: { label: '초록', color: null },
-  blue: { label: '파랑', color: '#3b82f6' },
-  gold: { label: '금색', color: '#d99a0b' },
-  pink: { label: '분홍', color: '#e5488f' },
-  purple: { label: '보라', color: '#8b5cf6' },
-  red: { label: '빨강', color: '#e5484d' },
+/**
+ * 강조색. dark/light = 각 배경에서 쓸 색 (null = 테마 기본색).
+ * 무채색은 배경에 따라 밝기를 바꿔야 읽힘.
+ */
+export const ACCENTS: Record<AccentId, { label: string; dark: string | null; light: string | null; neutral?: boolean }> = {
+  default: { label: '초록', dark: null, light: null },
+  mono: { label: '모노 (흰/검)', dark: '#f2f2f2', light: '#1a1a1a', neutral: true },
+  silver: { label: '은색', dark: '#c8c8c8', light: '#6e6e6e', neutral: true },
+  gray: { label: '회색', dark: '#9a9a9a', light: '#8a8a8a', neutral: true },
+  blue: { label: '파랑', dark: '#5b9bff', light: '#2f6fe0' },
+  gold: { label: '금색', dark: '#f0b429', light: '#b7790b' },
+  pink: { label: '분홍', dark: '#f06aa8', light: '#d6337f' },
+  purple: { label: '보라', dark: '#a78bfa', light: '#7c4dff' },
+  red: { label: '빨강', dark: '#ff6b6b', light: '#d93636' },
 }
 
 export const FONTS: Record<FontId, { label: string; stack: string | null }> = {
@@ -58,29 +72,33 @@ export const FONTS: Record<FontId, { label: string; stack: string | null }> = {
   serif: { label: '세리프', stack: "ui-serif, 'New York', Georgia, serif" },
 }
 
-function sanitizeDisplay(raw: unknown): DisplayOptions {
+export function sanitizeDisplay(raw: unknown): DisplayOptions {
   const d = defaultDisplay()
   if (typeof raw !== 'object' || raw === null) return d
   const r = raw as Record<string, unknown>
   const pick = <T,>(v: unknown, allowed: readonly T[], fb: T): T => (allowed.includes(v as T) ? (v as T) : fb)
+  // v1(위젯 없음, layout 있음) → 위젯 목록으로 변환. 이전 사용자는 안내도 건너뜀
+  const legacy = !Array.isArray(r.widgets) && ('layout' in r || 'skin' in r)
+  const widgets = legacy ? widgetsFromLegacy(r) : (sanitizeWidgets(r.widgets) ?? d.widgets)
   return {
-    skin: pick(r.skin, ['countup', 'odometer', 'flip', 'slot', 'floating', 'tank'] as const, d.skin),
+    widgets,
+    defaultSkin: pick(legacy ? r.skin : r.defaultSkin, SKIN_IDS, d.defaultSkin),
     decimals: pick(r.decimals, [0, 1, 2, 3] as const, d.decimals),
     updateMode: pick(r.updateMode, ['continuous', 'second', 'step'] as const, d.updateMode),
     step: pick(r.step, [10, 100, 1000] as const, d.step),
-    layout: pick(r.layout, ['stack', 'hero'] as const, d.layout),
-    heroPeriod: pick(r.heroPeriod, ['today', 'week', 'month'] as const, d.heroPeriod),
     theme: pick(r.theme, ['system', 'dark', 'light', 'contrast'] as const, d.theme),
     accent: pick(r.accent, Object.keys(ACCENTS) as AccentId[], d.accent),
     font: pick(r.font, Object.keys(FONTS) as FontId[], d.font),
     milestones: typeof r.milestones === 'boolean' ? r.milestones : d.milestones,
     milestoneUnit: pick(r.milestoneUnit, [10_000, 50_000, 100_000] as const, d.milestoneUnit),
+    onboarded: legacy || r.onboarded === true,
   }
 }
 
 interface DisplayState {
   display: DisplayOptions
   updateDisplay: (patch: Partial<DisplayOptions>) => void
+  setWidgets: (widgets: Widget[]) => void
 }
 
 export const useDisplay = create<DisplayState>()(
@@ -88,12 +106,15 @@ export const useDisplay = create<DisplayState>()(
     (set) => ({
       display: defaultDisplay(),
       updateDisplay: (patch) => set((s) => ({ display: sanitizeDisplay({ ...s.display, ...patch }) })),
+      setWidgets: (widgets) => set((s) => ({ display: sanitizeDisplay({ ...s.display, widgets }) })),
     }),
     {
       name: 'salary-display:display',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ display: s.display }),
+      // 버전 변환은 sanitizeDisplay가 모양을 보고 처리
+      migrate: (persisted) => persisted as { display: DisplayOptions },
       merge: (persisted, current) => ({
         ...current,
         display: sanitizeDisplay((persisted as { display?: unknown } | undefined)?.display),
