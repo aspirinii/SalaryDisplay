@@ -237,7 +237,7 @@ interface SkinProps {
 | M2 설정 UI | ✅ 완료 (2026-11-18) | `src/components/SettingsPanel.tsx`, `src/store/settings.ts` (Zustand + localStorage, 저장값은 `sanitizeSettings`로 검증). 테스트 27개 |
 | M3 기본 표시 | ✅ 완료 (2026-11-18) | 스킨 인터페이스(`src/skins/`), 주행거리계·카운트업, 화면 구성(하나 크게/셋 나란히), 갱신 방식(연속/1초/금액 단위), 소수점. 테스트 35개 |
 | M4 스킨 확장 | ✅ 완료 (2026-11-18) | 플립 시계·슬롯머신·떠오르는 +₩·물통 스킨, 테마(기기/다크/라이트/고대비)·강조색 6종·숫자 글꼴 4종, 마일스톤 축하(1만/5만/10만 원). 테스트 36개 |
-| M5 마감·배포 | 🟡 로컬 완료 (2026-11-18) | 전체화면 모드(F 키, 커서·버튼 자동 숨김, 화면 꺼짐 방지), PWA(설치·오프라인, 아이콘 `npm run icons`), GitHub Pages 워크플로(`.github/workflows/deploy.yml`). **남은 일: GitHub 저장소 생성·push·Pages 설정** |
+| M5 마감·배포 | ✅ 완료 (2026-11-18) | 전체화면 모드(F 키, 커서·버튼 자동 숨김, 화면 꺼짐 방지), PWA(설치·오프라인, 아이콘 `npm run icons`), GitHub Pages 워크플로(`.github/workflows/deploy.yml`). 저장소 https://github.com/aspirinii/SalaryDisplay · 배포 https://aspirinii.github.io/SalaryDisplay/ |
 | M6 Mac 앱 | 대기 | Tauri 패키징, 메뉴바, 위젯, 자동 실행 |
 
 M5 메모:

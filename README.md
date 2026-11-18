@@ -1,6 +1,8 @@
 # SalaryDisplay
 
 근무시간 동안 오늘·이번 주·이번 달 번 돈이 초 단위로 쌓이는 모습을 보여주는 웹앱.
+
+**바로 쓰기: https://aspirinii.github.io/SalaryDisplay/**
 계획: [PLAN.md](PLAN.md)
 
 ```bash
