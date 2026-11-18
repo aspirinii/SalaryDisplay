@@ -47,3 +47,33 @@ export function odometerWheels(
   }
   return { wheels: wheels.reverse(), intCount }
 }
+
+export interface DigitChar {
+  ch: string
+  /** 숫자면 자리(10^place), 쉼표·점이면 null */
+  place: number | null
+  /** 자리가 초당 3번 넘게 바뀌면 true → 애니메이션 생략 */
+  fast: boolean
+}
+
+/** 금액을 "1,234.56" 형식 글자로 나누고, 각 숫자에 자릿값을 붙임 */
+export function digitChars(value: number, decimals: number, ratePerSecond: number): DigitChar[] {
+  const text = Math.max(0, value).toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
+  const dot = text.indexOf('.')
+  const intDigits = (dot === -1 ? text : text.slice(0, dot)).replace(/,/g, '').length
+  let intSeen = 0
+  let fracSeen = 0
+  let inFrac = false
+  return [...text].map((ch) => {
+    if (ch === '.') {
+      inFrac = true
+      return { ch, place: null, fast: false }
+    }
+    if (ch === ',') return { ch, place: null, fast: false }
+    const place = inFrac ? -++fracSeen : intDigits - 1 - intSeen++
+    return { ch, place, fast: ratePerSecond / 10 ** place > 3 }
+  })
+}

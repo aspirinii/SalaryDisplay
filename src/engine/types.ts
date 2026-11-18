@@ -63,6 +63,10 @@ export interface EarningsSnapshot {
   status: WorkStatus
   /** 오늘 받을 총액 (오늘 근무가 모두 끝났을 때) */
   todayTotal: number
+  /** 이번 주 전체 근무를 마쳤을 때 금액 */
+  weekTotal: number
+  /** 이번 달 기간 전체 근무를 마쳤을 때 금액 */
+  monthTotal: number
   /** 0~1 */
   todayProgress: number
   /** 오늘 마지막 유급 구간 종료까지 남은 초 (근무 끝났으면 0) */

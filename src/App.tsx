@@ -3,6 +3,8 @@ import { snapshot } from './engine'
 import { useSettings } from './store/settings'
 import { useDisplay, type PeriodKey } from './store/display'
 import { useNow } from './hooks/useNow'
+import { useAppearance } from './hooks/useAppearance'
+import { useMilestone } from './hooks/useMilestone'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Counter } from './components/Counter'
 import { won } from './format'
@@ -16,13 +18,17 @@ export default function App() {
   const settings = useSettings((s) => s.settings)
   const display = useDisplay((s) => s.display)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  useAppearance(display)
   // 연속 모드만 매 프레임, 나머지는 초 단위 갱신 (CPU 절약)
   const now = useNow(display.updateMode === 'continuous' ? 'frame' : 'second')
   const snap = snapshot(settings, now)
+  const milestone = useMilestone(snap.today, display.milestoneUnit, display.milestones)
   const hrs = Math.floor(snap.secondsUntilOff / 3600)
   const mins = Math.floor((snap.secondsUntilOff % 3600) / 60)
 
   const values: Record<PeriodKey, number> = { today: snap.today, week: snap.week, month: snap.month }
+  const totals: Record<PeriodKey, number> = { today: snap.todayTotal, week: snap.weekTotal, month: snap.monthTotal }
+  const progress = (p: PeriodKey) => (totals[p] > 0 ? values[p] / totals[p] : 0)
   const hero = display.layout === 'hero' ? display.heroPeriod : null
   const cards = PERIODS.filter((p) => p !== hero)
   const counterProps = { ratePerSecond: snap.ratePerSecond, status: snap.status, options: display }
@@ -40,17 +46,17 @@ export default function App() {
       </header>
 
       {hero && (
-        <section className={css.hero}>
+        <section className={css.hero} data-celebrate={milestone !== null && hero === 'today'}>
           <div className={css.label}>{PERIOD_LABEL[hero]}</div>
-          <Counter value={values[hero]} size="hero" {...counterProps} />
+          <Counter value={values[hero]} progress={progress(hero)} size="hero" {...counterProps} />
         </section>
       )}
 
       <div className={css.cards} data-layout={display.layout}>
         {cards.map((p) => (
-          <section key={p} className={css.card}>
+          <section key={p} className={css.card} data-celebrate={milestone !== null && p === 'today'}>
             <div className={css.label}>{PERIOD_LABEL[p]}</div>
-            <Counter value={values[p]} size="card" {...counterProps} />
+            <Counter value={values[p]} progress={progress(p)} size="card" {...counterProps} />
           </section>
         ))}
       </div>
@@ -62,6 +68,12 @@ export default function App() {
         오늘 {(snap.todayProgress * 100).toFixed(1)}% / {won(snap.todayTotal)}
         {snap.secondsUntilOff > 0 && ` · 퇴근까지 ${hrs}시간 ${mins}분`}
       </p>
+
+      {milestone !== null && (
+        <div className={css.toast} role="status" key={milestone}>
+          🎉 오늘 {won(milestone)} 돌파!
+        </div>
+      )}
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </main>
   )

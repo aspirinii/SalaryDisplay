@@ -17,8 +17,8 @@ function Wheel({ pos, frac }: { pos: number; frac?: boolean }) {
 }
 
 /** 주행거리계: 자릿수가 세로로 굴러 올라감 */
-export function Odometer({ value, ratePerSecond, decimals, size }: SkinProps) {
-  const { wheels, intCount } = odometerWheels(value, decimals, ratePerSecond)
+export function Odometer({ value, digitRate, decimals, size }: SkinProps) {
+  const { wheels, intCount } = odometerWheels(value, decimals, digitRate)
   const label = Math.max(0, value).toLocaleString('ko-KR', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,

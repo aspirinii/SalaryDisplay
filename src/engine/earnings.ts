@@ -72,6 +72,8 @@ export function snapshot(settings: Settings, nowDate: Date): EarningsSnapshot {
     ratePerSecond: ratePerSecond(settings, month),
     status: statusAt(settings, now),
     todayTotal,
+    weekTotal: earnedBetween(settings, week.start, week.end),
+    monthTotal: earnedBetween(settings, month.start, month.end),
     todayProgress: todayTotal > 0 ? Math.min(1, today / todayTotal) : 0,
     secondsUntilOff: Math.max(0, (lastPaidEnd - now) / 1000),
     monthPeriod: month,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { odometerWheels, quantize } from './digits'
+import { digitChars, odometerWheels, quantize } from './digits'
 
 describe('quantize', () => {
   it('step 모드는 단위로 내림', () => {
@@ -49,5 +49,15 @@ describe('odometerWheels', () => {
     const { wheels, intCount } = odometerWheels(12.34, 2, 0.01)
     expect(intCount).toBe(2)
     expect(round(wheels)).toEqual([1, 2, 3, 4])
+  })
+})
+
+describe('digitChars', () => {
+  it('자릿값과 빠른 자리 표시', () => {
+    const chars = digitChars(1234.56, 2, 5)
+    expect(chars.map((c) => c.ch).join('')).toBe('1,234.56')
+    expect(chars.map((c) => c.place)).toEqual([3, null, 2, 1, 0, null, -1, -2])
+    // 초당 5원: 1원 자리 이하는 빠름, 10원 자리부터는 느림
+    expect(chars.filter((c) => c.fast).map((c) => c.place)).toEqual([0, -1, -2])
   })
 })

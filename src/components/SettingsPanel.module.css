@@ -355,3 +355,21 @@
 .field .segmented + .segmented {
   margin-top: 6px;
 }
+
+/* 강조색 견본 */
+.swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sheet .swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  padding: 0;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--border);
+}
+.sheet .swatch[aria-checked='true'] {
+  box-shadow: 0 0 0 2px var(--fg);
+}

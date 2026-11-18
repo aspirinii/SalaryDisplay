@@ -91,3 +91,52 @@
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── 마일스톤 축하 ── */
+.hero[data-celebrate='true'],
+.card[data-celebrate='true'] {
+  animation: celebrate 0.9s ease-out 2;
+}
+@keyframes celebrate {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.03);
+    filter: drop-shadow(0 0 18px var(--accent));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  background: var(--card);
+  border: 1px solid var(--accent);
+  color: var(--fg);
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.25);
+  animation: toastIn 0.35s ease-out;
+  z-index: 5;
+  white-space: nowrap;
+}
+@keyframes toastIn {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero[data-celebrate='true'],
+  .card[data-celebrate='true'],
+  .toast {
+    animation: none;
+  }
+}

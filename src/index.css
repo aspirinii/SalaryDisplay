@@ -1,3 +1,4 @@
+/* 테마: data-theme 없음/system = 기기 설정 따름, dark/light/contrast = 고정 */
 :root {
   --bg: #f7f7f5;
   --fg: #1a1a1a;
@@ -5,19 +6,44 @@
   --card: #ffffff;
   --border: #e4e4e0;
   --accent: #0f8a5f;
-  color-scheme: light dark;
+  --flip-bg: #ecece8;
+  color-scheme: light;
   font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']):not([data-theme='contrast']) {
     --bg: #111312;
     --fg: #ececec;
     --muted: #9a9a9a;
     --card: #1b1e1c;
     --border: #2c302d;
     --accent: #3fd39a;
+    --flip-bg: #232724;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #111312;
+  --fg: #ececec;
+  --muted: #9a9a9a;
+  --card: #1b1e1c;
+  --border: #2c302d;
+  --accent: #3fd39a;
+  --flip-bg: #232724;
+  color-scheme: dark;
+}
+
+:root[data-theme='contrast'] {
+  --bg: #000000;
+  --fg: #ffffff;
+  --muted: #d0d0d0;
+  --card: #0a0a0a;
+  --border: #ffffff;
+  --accent: #00ff9c;
+  --flip-bg: #1a1a1a;
+  color-scheme: dark;
 }
 
 * {

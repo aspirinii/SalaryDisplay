@@ -191,6 +191,8 @@ describe('스냅샷', () => {
     expect(snap.todayTotal).toBeCloseTo(NOV_RATE * 8 * H, 6)
     expect(snap.todayProgress).toBeCloseTo(1 / 8, 10)
     expect(snap.secondsUntilOff).toBe(8 * H)
+    expect(snap.weekTotal).toBeCloseTo(NOV_RATE * 40 * H, 4)
+    expect(snap.monthTotal).toBeCloseTo(3_000_000, 4)
   })
 
   it('퇴근 후에는 오늘 금액 고정, 진행률 100%', () => {

@@ -1,6 +1,6 @@
 import { useNow } from '../hooks/useNow'
 import { SKINS } from '../skins/registry'
-import { useDisplay, type DisplayOptions, type PeriodKey } from '../store/display'
+import { ACCENTS, FONTS, useDisplay, type AccentId, type DisplayOptions, type FontId, type PeriodKey, type ThemeId } from '../store/display'
 import { Counter } from './Counter'
 import css from './SettingsPanel.module.css'
 
@@ -10,7 +10,10 @@ const PREVIEW_RATE = 0.35 // 미리보기: 초당 ₩0.35 → 굴러가는 모�
 function SkinPreview({ options }: { options: DisplayOptions }) {
   const now = useNow(options.updateMode === 'continuous' ? 'frame' : 'second')
   const value = 128_497.6 + ((now.getTime() - PREVIEW_START) / 1000) * PREVIEW_RATE * 40
-  return <Counter value={value} ratePerSecond={PREVIEW_RATE * 40} status="working" options={options} size="mini" />
+  const progress = 0.35 + (((now.getTime() - PREVIEW_START) / 1000) % 60) / 100
+  return (
+    <Counter value={value} ratePerSecond={PREVIEW_RATE * 40} status="working" progress={progress} options={options} size="mini" />
+  )
 }
 
 export function DisplaySection({ open }: { open: boolean }) {
@@ -108,6 +111,84 @@ export function DisplaySection({ open }: { open: boolean }) {
             </button>
           ))}
         </div>
+      </fieldset>
+      <fieldset className={css.field}>
+        <legend>테마</legend>
+        <div className={css.segmented}>
+          {(
+            [
+              ['system', '기기 설정'],
+              ['dark', '다크'],
+              ['light', '라이트'],
+              ['contrast', '고대비'],
+            ] as [ThemeId, string][]
+          ).map(([id, label]) => (
+            <button key={id} role="radio" aria-checked={display.theme === id} onClick={() => update({ theme: id })}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className={css.field}>
+        <legend>강조색</legend>
+        <div className={css.swatches}>
+          {(Object.keys(ACCENTS) as AccentId[]).map((id) => (
+            <button
+              key={id}
+              role="radio"
+              aria-checked={display.accent === id}
+              aria-label={ACCENTS[id].label}
+              title={ACCENTS[id].label}
+              className={css.swatch}
+              style={{ background: ACCENTS[id].color ?? 'var(--default-accent, #2fb383)' }}
+              onClick={() => update({ accent: id })}
+            />
+          ))}
+        </div>
+        {display.theme === 'contrast' && <p className={css.hint}>고대비 테마에서는 고정 강조색을 씁니다.</p>}
+      </fieldset>
+
+      <fieldset className={css.field}>
+        <legend>숫자 글꼴</legend>
+        <div className={css.segmented}>
+          {(Object.keys(FONTS) as FontId[]).map((id) => (
+            <button
+              key={id}
+              role="radio"
+              aria-checked={display.font === id}
+              onClick={() => update({ font: id })}
+              style={{ fontFamily: FONTS[id].stack ?? undefined }}
+            >
+              {FONTS[id].label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className={css.field}>
+        <legend>축하 효과</legend>
+        <label className={css.toggle}>
+          <input
+            type="checkbox"
+            checked={display.milestones}
+            onChange={(e) => update({ milestones: e.target.checked })}
+          />
+          <span>
+            오늘 금액이 단위를 넘을 때 축하
+            <select
+              style={{ marginLeft: 8 }}
+              value={display.milestoneUnit}
+              disabled={!display.milestones}
+              onChange={(e) => update({ milestoneUnit: Number(e.target.value) as DisplayOptions['milestoneUnit'] })}
+              aria-label="축하 단위"
+            >
+              <option value={10000}>1만 원마다</option>
+              <option value={50000}>5만 원마다</option>
+              <option value={100000}>10만 원마다</option>
+            </select>
+          </span>
+        </label>
       </fieldset>
     </section>
   )
