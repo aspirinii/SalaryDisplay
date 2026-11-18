@@ -10,7 +10,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 새 버전을 받으면 앱이 알림을 띄우고 새로고침 (src/components/UpdatePrompt.tsx)
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['icons/favicon-32.png', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'SalaryDisplay — 실시간 월급 카운터',

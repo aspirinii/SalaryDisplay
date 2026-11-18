@@ -9,6 +9,7 @@ import { useFullscreen, useIdle } from './hooks/useFullscreen'
 import { useLongPress } from './hooks/useLongPress'
 import { SettingsPanel, type SettingsTab } from './components/SettingsPanel'
 import { Onboarding } from './components/Onboarding'
+import { UpdatePrompt } from './components/UpdatePrompt'
 import { Board, type BoardApi } from './widgets/Board'
 import { AddWidgetSheet, WidgetOptionsSheet } from './widgets/Sheets'
 import { editorReducer, initialEditor } from './layout/editor'
@@ -210,6 +211,7 @@ export default function App() {
       )}
       <SettingsPanel tab={settingsTab} onTab={setSettingsTab} onClose={() => setSettingsTab(null)} onEditLayout={startEdit} />
       {showOnboarding && <Onboarding onDone={() => updateDisplay({ onboarded: true })} />}
+      <UpdatePrompt busy={editing || settingsTab !== null || fullscreen.active || showOnboarding} />
     </main>
   )
 }
