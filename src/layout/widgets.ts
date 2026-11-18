@@ -70,6 +70,7 @@ export const PRESETS: Record<PresetId, { name: string; description: string; buil
     name: '하나 크게',
     description: '오늘을 크게, 주·월은 아래에',
     build: () => [
+      createWidget('status', { size: 'S' }),
       createWidget('counter', { period: 'today', size: 'L' }),
       createWidget('counter', { period: 'week', size: 'M' }),
       createWidget('counter', { period: 'month', size: 'M' }),
@@ -196,6 +197,11 @@ export function sanitizeWidgets(raw: unknown): Widget[] | null {
     out.push(w)
   }
   return out
+}
+
+/** 상태 위젯이 없으면 맨 앞에 추가 (예전엔 머리말에 있던 상태를 위젯으로 옮길 때) */
+export function withStatusWidget(list: Widget[]): Widget[] {
+  return list.some((w) => w.type === 'status') ? list : [createWidget('status', { size: 'S' }), ...list]
 }
 
 /**

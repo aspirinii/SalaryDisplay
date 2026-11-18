@@ -9,36 +9,8 @@
 .top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
-}
-
-.status {
-  font-size: 14px;
-  color: var(--muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-.status::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--muted);
-}
-.status[data-status='working']::before {
-  background: var(--accent);
-}
-.status[data-status='break']::before {
-  background: #e0a526;
-}
-
-.rate {
-  margin-left: 4px;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
 }
 
 .actions {

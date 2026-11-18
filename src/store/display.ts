@@ -6,6 +6,7 @@ import {
   sanitizeWidgets,
   SKIN_IDS,
   widgetsFromLegacy,
+  withStatusWidget,
   type SkinId,
   type Widget,
 } from '../layout/widgets'
@@ -114,11 +115,16 @@ export const useDisplay = create<DisplayState>()(
     }),
     {
       name: 'salary-display:display',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ display: s.display }),
-      // 버전 변환은 sanitizeDisplay가 모양을 보고 처리
-      migrate: (persisted) => persisted as { display: DisplayOptions },
+      // 모양 변환은 sanitizeDisplay가 처리.
+      // v3: 머리말의 상태(근무 중 · +₩/초)가 위젯으로 옮겨감 → 기존 화면에 상태 위젯 추가
+      migrate: (persisted, version) => {
+        const display = sanitizeDisplay((persisted as { display?: unknown } | undefined)?.display)
+        if (version < 3) display.widgets = withStatusWidget(display.widgets)
+        return { display }
+      },
       merge: (persisted, current) => ({
         ...current,
         display: sanitizeDisplay((persisted as { display?: unknown } | undefined)?.display),

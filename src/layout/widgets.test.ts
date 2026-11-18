@@ -9,6 +9,7 @@ import {
   sizeFromRatio,
   updateWidget,
   widgetsFromLegacy,
+  withStatusWidget,
   type Widget,
 } from './widgets'
 import { sanitizeDisplay } from '../store/display'
@@ -153,5 +154,18 @@ describe('축하 단위', () => {
     expect(sanitizeDisplay({ widgets: [], milestoneUnit: 100 }).milestoneUnit).toBe(100)
     expect(sanitizeDisplay({ widgets: [], milestoneUnit: 1000 }).milestoneUnit).toBe(1000)
     expect(sanitizeDisplay({ widgets: [], milestoneUnit: 777 }).milestoneUnit).toBe(10_000)
+  })
+})
+
+describe('상태 위젯 옮기기 (v3)', () => {
+  it('없으면 맨 앞에 작게 추가, 있으면 그대로', () => {
+    const list = [createWidget('counter', { period: 'today', size: 'L' })]
+    expect(shape(withStatusWidget(list))).toEqual(['status:-:S', 'counter:today:L'])
+    const has = withStatusWidget(list)
+    expect(withStatusWidget(has)).toBe(has)
+  })
+
+  it('기본 배치에 상태 위젯이 들어 있음', () => {
+    expect(shape(PRESETS.hero.build())[0]).toBe('status:-:S')
   })
 })

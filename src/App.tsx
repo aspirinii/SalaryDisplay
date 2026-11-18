@@ -18,8 +18,6 @@ import { won } from './format'
 import css from './App.module.css'
 import ed from './widgets/editor.module.css'
 
-const STATUS_LABEL = { working: '근무 중', break: '휴게 중', off: '근무 외' } as const
-
 /** 예전에 급여 설정을 저장한 적이 있으면 첫 실행 안내를 건너뜀 */
 const HAD_SETTINGS = (() => {
   try {
@@ -141,10 +139,6 @@ export default function App() {
         </div>
       ) : (
         <header className={css.top}>
-          <span className={css.status} data-status={snap.status}>
-            {STATUS_LABEL[snap.status]}
-            {snap.status !== 'off' && <span className={css.rate}>+{won(snap.ratePerSecond, 2)}/초</span>}
-          </span>
           <span className={css.actions}>
             {!fullscreen.active && (
               <button className={css.gear} onClick={startEdit} aria-label="화면 편집" title="화면 편집 (빈 곳 길게 누르기)">
