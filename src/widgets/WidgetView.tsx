@@ -1,7 +1,9 @@
 import type { EarningsSnapshot } from '../engine'
+import { periodValue } from './period'
+import { PileWidget } from './PileWidget'
 import { Counter } from '../components/Counter'
 import { won } from '../format'
-import { PERIOD_LABEL, type PeriodKey, type Widget } from '../layout/widgets'
+import { PERIOD_LABEL, type Widget } from '../layout/widgets'
 import type { DisplayOptions } from '../store/display'
 import css from './widgets.module.css'
 
@@ -15,19 +17,6 @@ export interface Live {
 }
 
 const STATUS_LABEL = { working: '근무 중', break: '휴게 중', off: '근무 외' } as const
-
-function periodValue(snap: EarningsSnapshot, p: PeriodKey): { value: number; total: number } {
-  switch (p) {
-    case 'today':
-      return { value: snap.today, total: snap.todayTotal }
-    case 'week':
-      return { value: snap.week, total: snap.weekTotal }
-    case 'month':
-      return { value: snap.month, total: snap.monthTotal }
-    case 'year':
-      return { value: snap.year, total: snap.yearTotal }
-  }
-}
 
 const hms = (secs: number) => {
   const s = Math.max(0, Math.floor(secs))
@@ -48,6 +37,8 @@ export function WidgetView({ widget, live }: { widget: Widget; live: Live }) {
       return <CountdownWidget live={live} />
     case 'clock':
       return <ClockWidget live={live} />
+    case 'pile':
+      return <PileWidget widget={widget} live={live} />
   }
 }
 

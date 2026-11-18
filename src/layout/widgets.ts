@@ -3,13 +3,15 @@
  * 배치는 자유 좌표가 아니라 "순서 + 크기(S/M/L)" 격자.
  */
 
-export type WidgetType = 'counter' | 'progress' | 'status' | 'countdown' | 'clock'
+import { DENOMS, recommendedUnit, type Arrange, type Denom, type MoneyMode, type Overflow } from '../pile/money'
+
+export type WidgetType = 'counter' | 'progress' | 'status' | 'countdown' | 'clock' | 'pile'
 export type WidgetSize = 'S' | 'M' | 'L'
 export type PeriodKey = 'today' | 'week' | 'month' | 'year'
 export type SkinId = 'countup' | 'odometer' | 'flip' | 'slot' | 'floating' | 'tank'
 
 export const SKIN_IDS: readonly SkinId[] = ['odometer', 'countup', 'flip', 'slot', 'floating', 'tank']
-export const WIDGET_TYPES: readonly WidgetType[] = ['counter', 'progress', 'status', 'countdown', 'clock']
+export const WIDGET_TYPES: readonly WidgetType[] = ['counter', 'pile', 'progress', 'status', 'countdown', 'clock']
 export const PERIODS: readonly PeriodKey[] = ['today', 'week', 'month', 'year']
 export const SIZES: readonly WidgetSize[] = ['S', 'M', 'L']
 
@@ -23,9 +25,20 @@ export interface Widget {
   skin?: SkinId
   /** counter: 없으면 전역 소수점 */
   decimals?: 0 | 1 | 2 | 3
-  /** counter, progress: 라벨("오늘" 등) 표시. 기본 true */
+  /** counter, progress, pile: 라벨("오늘" 등) 표시. 기본 true */
   showLabel?: boolean
+  /** pile: 돈 종류 */
+  money?: MoneyMode
+  /** pile: 한 가지 단위일 때 단위 (섞을 때는 가장 작은 단위) */
+  unit?: Denom
+  /** pile: 쌓는 방식 */
+  arrange?: Arrange
+  /** pile: 넘칠 때. 없으면 묶음 */
+  overflow?: Overflow
 }
+
+/** 기간이 있는 위젯 */
+export const hasPeriod = (t: WidgetType) => t === 'counter' || t === 'progress' || t === 'pile'
 
 export const WIDGET_INFO: Record<WidgetType, { name: string; description: string; icon: string }> = {
   counter: { name: '금액 카운터', description: '오늘·이번 주·이번 달·올해 번 돈', icon: '₩' },
@@ -33,6 +46,7 @@ export const WIDGET_INFO: Record<WidgetType, { name: string; description: string
   status: { name: '상태', description: '근무 중/휴게/근무 외 + 초당 금액', icon: '●' },
   countdown: { name: '퇴근까지', description: '오늘 근무가 끝날 때까지 남은 시간', icon: '⏱' },
   clock: { name: '시계', description: '현재 시각과 날짜', icon: '🕘' },
+  pile: { name: '돈 쌓기', description: '동전·지폐가 쌓이는 모습 (더미·차곡차곡·시간별 칸)', icon: '🪙' },
 }
 
 export const PERIOD_LABEL: Record<PeriodKey, string> = {
@@ -54,6 +68,13 @@ export function newId(): string {
 export function createWidget(type: WidgetType, patch: Partial<Widget> = {}): Widget {
   const base: Widget = { id: newId(), type, size: 'M' }
   if (type === 'counter') base.period = 'today'
+  if (type === 'pile') {
+    base.period = patch.period ?? 'today'
+    base.size = 'L'
+    base.money = 'single'
+    base.unit = recommendedUnit(base.period)
+    base.arrange = 'heap'
+  }
   if (type === 'progress') {
     base.period = 'today'
     base.size = 'L'
@@ -63,7 +84,7 @@ export function createWidget(type: WidgetType, patch: Partial<Widget> = {}): Wid
 
 /* ───────────── 배치 프리셋 ───────────── */
 
-export type PresetId = 'hero' | 'three' | 'minimal' | 'tanks' | 'dashboard'
+export type PresetId = 'hero' | 'three' | 'minimal' | 'tanks' | 'piggy' | 'hourly' | 'dashboard'
 
 export const PRESETS: Record<PresetId, { name: string; description: string; build: () => Widget[] }> = {
   hero: {
@@ -99,6 +120,28 @@ export const PRESETS: Record<PresetId, { name: string; description: string; buil
       createWidget('counter', { period: 'today', size: 'L', skin: 'tank' }),
       createWidget('counter', { period: 'week', size: 'M', skin: 'tank' }),
       createWidget('counter', { period: 'month', size: 'M', skin: 'tank' }),
+    ],
+  },
+  piggy: {
+    name: '저금통',
+    description: '오늘 500원 동전 더미 + 이번 달 만 원 차곡차곡',
+    build: () => [
+      createWidget('status', { size: 'S' }),
+      createWidget('counter', { period: 'today', size: 'L' }),
+      createWidget('pile', { period: 'today', size: 'L', unit: 500, arrange: 'heap' }),
+      createWidget('pile', { period: 'month', size: 'L', unit: 10000, arrange: 'neat' }),
+    ],
+  },
+  hourly: {
+    name: '시간별',
+    description: '근무 시간마다 칸에 천 원짜리가 쌓임',
+    build: () => [
+      createWidget('status', { size: 'S' }),
+      createWidget('countdown', { size: 'S' }),
+      createWidget('clock', { size: 'S' }),
+      createWidget('pile', { period: 'today', size: 'L', unit: 1000, arrange: 'hourly' }),
+      createWidget('counter', { period: 'today', size: 'M' }),
+      createWidget('counter', { period: 'month', size: 'M' }),
     ],
   },
   dashboard: {
@@ -174,14 +217,23 @@ export function sanitizeWidget(raw: unknown): Widget | null {
     type,
     size: pick(raw.size, SIZES) ?? 'M',
   }
-  if (type === 'counter' || type === 'progress') w.period = pick(raw.period, PERIODS) ?? 'today'
+  if (hasPeriod(type)) w.period = pick(raw.period, PERIODS) ?? 'today'
   if (type === 'counter') {
     const skin = pick(raw.skin, SKIN_IDS)
     if (skin) w.skin = skin
     const decimals = pick(raw.decimals, [0, 1, 2, 3] as const)
     if (decimals !== undefined) w.decimals = decimals
   }
-  if ((type === 'counter' || type === 'progress') && raw.showLabel === false) w.showLabel = false
+  if (type === 'pile') {
+    w.money = pick(raw.money, ['single', 'mixed', 'coins', 'bills'] as const) ?? 'single'
+    w.unit = pick(raw.unit, DENOMS) ?? recommendedUnit(w.period ?? 'today')
+    w.arrange = pick(raw.arrange, ['heap', 'neat', 'hourly'] as const) ?? 'heap'
+    // 시간별 칸은 오늘만
+    if (w.arrange === 'hourly') w.period = 'today'
+    const overflow = pick(raw.overflow, ['bundle', 'exchange', 'shrink'] as const)
+    if (overflow && overflow !== 'bundle') w.overflow = overflow
+  }
+  if (hasPeriod(type) && raw.showLabel === false) w.showLabel = false
   return w
 }
 

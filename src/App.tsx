@@ -173,6 +173,7 @@ export default function App() {
         <WidgetOptionsSheet
           widget={optionsWidget}
           display={display}
+          ratePerSecond={snap.ratePerSecond}
           onChange={(patch) => api.change((l) => updateWidget(l, optionsWidget.id, patch))}
           onClose={() => setSheet(null)}
         />

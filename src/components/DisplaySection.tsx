@@ -10,6 +10,7 @@ import {
   type ThemeId,
 } from '../store/display'
 import { SkinPreview } from './SkinPreview'
+import { playMoney, unlockSound } from '../pile/sound'
 import css from './SettingsPanel.module.css'
 
 const THEMES: [ThemeId, string][] = [
@@ -192,6 +193,28 @@ export function LookSection({ open, onEditLayout }: { open: boolean; onEditLayou
             {display.updateMode === 'step' && '정해진 금액이 쌓일 때마다 넘어감'}
           </p>
         </fieldset>
+      </section>
+
+      <section className={css.section}>
+        <h3>돈 쌓기 위젯</h3>
+        <label className={css.toggle}>
+          <input type="checkbox" checked={display.pileDrop} onChange={(e) => update({ pileDrop: e.target.checked })} />
+          <span>새 동전·지폐가 위에서 떨어지는 애니메이션</span>
+        </label>
+        <label className={css.toggle}>
+          <input
+            type="checkbox"
+            checked={display.pileSound}
+            onChange={(e) => {
+              update({ pileSound: e.target.checked })
+              if (e.target.checked) {
+                unlockSound()
+                playMoney('coin')
+              }
+            }}
+          />
+          <span>소리 (동전 짤랑 · 지폐 사락, 1초에 한 번까지)</span>
+        </label>
       </section>
 
       <section className={css.section}>

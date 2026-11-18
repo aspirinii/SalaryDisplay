@@ -36,6 +36,10 @@ export interface DisplayOptions {
   /** 오늘 금액이 단위를 넘을 때 축하 표시 */
   milestones: boolean
   milestoneUnit: MilestoneUnit
+  /** 돈 쌓기: 떨어지는 애니메이션 */
+  pileDrop: boolean
+  /** 돈 쌓기: 짤랑·사락 소리 */
+  pileSound: boolean
   /** 첫 실행 안내를 마쳤거나 건너뜀 */
   onboarded: boolean
 }
@@ -51,6 +55,8 @@ export const defaultDisplay = (): DisplayOptions => ({
   font: 'system',
   milestones: true,
   milestoneUnit: 10_000,
+  pileDrop: true,
+  pileSound: false,
   onboarded: false,
 })
 
@@ -96,6 +102,8 @@ export function sanitizeDisplay(raw: unknown): DisplayOptions {
     font: pick(r.font, Object.keys(FONTS) as FontId[], d.font),
     milestones: typeof r.milestones === 'boolean' ? r.milestones : d.milestones,
     milestoneUnit: pick(r.milestoneUnit, MILESTONE_UNITS, d.milestoneUnit),
+    pileDrop: typeof r.pileDrop === 'boolean' ? r.pileDrop : d.pileDrop,
+    pileSound: r.pileSound === true,
     onboarded: legacy || r.onboarded === true,
   }
 }

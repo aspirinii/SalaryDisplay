@@ -9,6 +9,7 @@ import {
   WIDGET_INFO,
   WIDGET_TYPES,
   createWidget,
+  hasPeriod as periodic,
   type PeriodKey,
   type PresetId,
   type Widget,
@@ -16,6 +17,18 @@ import {
 } from '../layout/widgets'
 import { SKINS } from '../skins/registry'
 import type { DisplayOptions } from '../store/display'
+import {
+  ARRANGE_LABEL,
+  DENOMS,
+  MONEY_LABEL,
+  OVERFLOW_LABEL,
+  denomLabel,
+  recommendedUnit,
+  type Arrange,
+  type Denom,
+  type MoneyMode,
+  type Overflow,
+} from '../pile/money'
 import ed from './editor.module.css'
 
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -66,16 +79,20 @@ export function WidgetOptionsSheet({
   display,
   onChange,
   onClose,
+  ratePerSecond,
 }: {
   widget: Widget
   display: DisplayOptions
   onChange: (patch: Partial<Omit<Widget, 'id'>>) => void
   onClose: () => void
+  /** 지금 초당 금액 (돈 쌓기: 1개 나오는 간격 안내) */
+  ratePerSecond?: number
 }) {
   const info = WIDGET_INFO[widget.type]
-  const hasPeriod = widget.type === 'counter' || widget.type === 'progress'
+  const hasPeriod = periodic(widget.type) && widget.arrange !== 'hourly'
   return (
     <Sheet title={`${info.name} 설정`} onClose={onClose}>
+      {widget.type === 'pile' && <PileOptions widget={widget} onChange={onChange} ratePerSecond={ratePerSecond} />}
       {hasPeriod && (
         <div className={ed.row}>
           <span>기간</span>
@@ -146,21 +163,114 @@ export function WidgetOptionsSheet({
         </>
       )}
 
-      {hasPeriod && (
+      {periodic(widget.type) && (
         <label className={ed.check}>
           <input
             type="checkbox"
             checked={widget.showLabel !== false}
             onChange={(e) => onChange({ showLabel: e.target.checked ? undefined : false })}
           />
-          기간 이름 표시 (예: “오늘”)
+          {widget.type === 'pile' ? '금액·개수·다음 1개 표시' : '기간 이름 표시 (예: “오늘”)'}
         </label>
       )}
     </Sheet>
   )
 }
 
+/* ───────────── 돈 쌓기 옵션 ───────────── */
+
+const every = (unit: number, rate: number | undefined) => {
+  if (!rate || rate <= 0) return ''
+  const s = unit / rate
+  if (s < 60) return `약 ${Math.round(s)}초마다 1개`
+  if (s < 3600) return `약 ${Math.round(s / 60)}분마다 1개`
+  return `약 ${(s / 3600).toFixed(1)}시간마다 1개`
+}
+
+function PileOptions({
+  widget,
+  onChange,
+  ratePerSecond,
+}: {
+  widget: Widget
+  onChange: (patch: Partial<Omit<Widget, 'id'>>) => void
+  ratePerSecond?: number
+}) {
+  const period = widget.period ?? 'today'
+  const money = widget.money ?? 'single'
+  const unit = widget.unit ?? recommendedUnit(period)
+  const arrange = widget.arrange ?? 'heap'
+  return (
+    <>
+      <div className={ed.row}>
+        <span>쌓는 방식</span>
+        <Seg<Arrange>
+          label="쌓는 방식"
+          value={arrange}
+          options={(Object.keys(ARRANGE_LABEL) as Arrange[]).map((a) => [a, ARRANGE_LABEL[a]])}
+          // 시간별 칸은 오늘 기준
+          onChange={(a) => onChange(a === 'hourly' ? { arrange: a, period: 'today' } : { arrange: a })}
+        />
+        {arrange === 'hourly' && <small className={ed.hint}>근무 시간마다 칸 하나 — 지금 시간 칸에 쌓이고, 정각이 되면 다음 칸으로</small>}
+      </div>
+      <div className={ed.row}>
+        <span>돈 종류</span>
+        <Seg<MoneyMode>
+          label="돈 종류"
+          value={money}
+          options={(Object.keys(MONEY_LABEL) as MoneyMode[]).map((m) => [m, MONEY_LABEL[m]])}
+          onChange={(m) => onChange({ money: m })}
+        />
+        {money !== 'single' && (
+          <small className={ed.hint}>
+            {money === 'mixed' && '거스름돈처럼 큰 단위부터: 만 원 → 5천 원 → 천 원 → 500원 → 100원'}
+            {money === 'coins' && '500원과 100원으로'}
+            {money === 'bills' && '만 원, 5천 원, 천 원으로'}
+          </small>
+        )}
+      </div>
+      {money === 'single' && (
+        <div className={ed.row}>
+          <span>단위</span>
+          <Seg<Denom>
+            label="단위"
+            value={unit}
+            options={DENOMS.map((d) => [d, `${d < 1000 ? '🪙' : '💵'} ${denomLabel(d)}${d === recommendedUnit(period) ? ' ★' : ''}`])}
+            onChange={(d) => onChange({ unit: d })}
+          />
+          <small className={ed.hint}>
+            {every(unit, ratePerSecond)}
+            {ratePerSecond ? ' · ' : ''}★ = {arrange === 'hourly' ? '오늘' : '이 기간'}에 어울리는 단위
+          </small>
+        </div>
+      )}
+      <div className={ed.row}>
+        <span>너무 많아지면</span>
+        <Seg<Overflow>
+          label="너무 많아지면"
+          value={widget.overflow ?? 'bundle'}
+          options={(Object.keys(OVERFLOW_LABEL) as Overflow[]).map((o) => [o, OVERFLOW_LABEL[o]])}
+          onChange={(o) => onChange({ overflow: o === 'bundle' ? undefined : o })}
+        />
+        <small className={ed.hint}>
+          {(widget.overflow ?? 'bundle') === 'bundle' && '동전 50개 → 롤, 1,000개 → 자루 / 지폐 100장 → 띠지 다발'}
+          {widget.overflow === 'exchange' && '더 큰 단위로 바꿔서 쌓음 (100원 → 500원 → 천 원 …)'}
+          {widget.overflow === 'shrink' && '조각을 작게 줄여서 계속 쌓음 (시간별 칸에서는 묶음)'}
+        </small>
+      </div>
+    </>
+  )
+}
+
 /* ───────────── 위젯 추가 · 배치 프리셋 ───────────── */
+
+const PILE_QUICK: [string, Partial<Widget>][] = [
+  ['오늘 · 500원 더미', { period: 'today', unit: 500, arrange: 'heap' }],
+  ['오늘 · 시간별 칸', { period: 'today', unit: 1000, arrange: 'hourly' }],
+  ['오늘 · 섞어서', { period: 'today', money: 'mixed', unit: 100, arrange: 'heap' }],
+  ['이번 주 · 5천 원 차곡차곡', { period: 'week', unit: 5000, arrange: 'neat' }],
+  ['이번 달 · 만 원 차곡차곡', { period: 'month', unit: 10000, arrange: 'neat' }],
+]
 
 export function AddWidgetSheet({
   onAdd,
@@ -180,16 +290,25 @@ export function AddWidgetSheet({
       <div className={ed.list}>
         {WIDGET_TYPES.map((t) => {
           const info = WIDGET_INFO[t]
-          const periodic = t === 'counter' || t === 'progress'
+          const quick = periodic(t)
           return (
-            <div key={t} className={ed.item} role={periodic ? 'group' : undefined}>
+            <div key={t} className={ed.item} role={quick ? 'group' : undefined}>
               <span className={ed.itemIcon} aria-hidden>
                 {info.icon}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <strong>{info.name}</strong>
                 <small>{info.description}</small>
-                {periodic && (
+                {t === 'pile' && (
+                  <div className={ed.quick}>
+                    {PILE_QUICK.map(([label, patch]) => (
+                      <button key={label} onClick={() => add(t, patch)}>
+                        ＋ {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {quick && t !== 'pile' && (
                   <div className={ed.quick}>
                     {PERIODS.map((p) => (
                       <button key={p} onClick={() => add(t, { period: p })}>
@@ -199,7 +318,7 @@ export function AddWidgetSheet({
                   </div>
                 )}
               </div>
-              {!periodic && (
+              {!quick && (
                 <button className={ed.close} onClick={() => add(t)} aria-label={`${info.name} 추가`}>
                   ＋ 추가
                 </button>

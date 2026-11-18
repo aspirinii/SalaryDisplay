@@ -120,3 +120,83 @@
     animation: none;
   }
 }
+
+/* ── 돈 쌓기 ── */
+.pile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pileHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.pileHead strong {
+  color: var(--muted);
+  font-weight: 500;
+}
+.pileHead small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.pileNext {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.nextIcon {
+  display: inline-block;
+  flex: none;
+  border: 1px solid var(--muted);
+  background: linear-gradient(to top, var(--accent) var(--p), transparent var(--p));
+}
+.nextIcon[data-kind='coin'] {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.nextIcon[data-kind='bill'] {
+  width: 24px;
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--accent) var(--p), transparent var(--p));
+}
+.pileStage {
+  position: relative;
+  flex: 1 0 auto;
+  height: 160px;
+  min-height: 120px;
+}
+.pile[data-size='M'] .pileStage {
+  height: 200px;
+}
+.pile[data-size='L'] .pileStage {
+  height: clamp(220px, 34vh, 460px);
+}
+.pile[data-arrange='hourly'] .pileStage {
+  height: 150px;
+}
+.pile[data-arrange='hourly'][data-size='L'] .pileStage {
+  height: clamp(170px, 24vh, 300px);
+}
+.pileCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
