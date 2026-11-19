@@ -40,6 +40,8 @@ export interface DisplayOptions {
   pileDrop: boolean
   /** 돈 쌓기: 짤랑·사락 소리 */
   pileSound: boolean
+  /** 돈 쌓기: 동전·지폐 색 — 원래 색 / 강조색 맞춤 */
+  pileColor: 'real' | 'accent'
   /** 첫 실행 안내를 마쳤거나 건너뜀 */
   onboarded: boolean
 }
@@ -57,6 +59,7 @@ export const defaultDisplay = (): DisplayOptions => ({
   milestoneUnit: 10_000,
   pileDrop: true,
   pileSound: false,
+  pileColor: 'real',
   onboarded: false,
 })
 
@@ -104,6 +107,7 @@ export function sanitizeDisplay(raw: unknown): DisplayOptions {
     milestoneUnit: pick(r.milestoneUnit, MILESTONE_UNITS, d.milestoneUnit),
     pileDrop: typeof r.pileDrop === 'boolean' ? r.pileDrop : d.pileDrop,
     pileSound: r.pileSound === true,
+    pileColor: pick(r.pileColor, ['real', 'accent'] as const, d.pileColor),
     onboarded: legacy || r.onboarded === true,
   }
 }

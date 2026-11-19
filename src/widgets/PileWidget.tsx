@@ -24,7 +24,6 @@ import {
 } from '../pile/layout'
 import { drawPiece, drawSlots, type Theme } from '../pile/draw'
 import { playMoney } from '../pile/sound'
-import { ACCENTS } from '../store/display'
 import { useSettings } from '../store/settings'
 import { periodValue } from './period'
 import type { Live } from './WidgetView'
@@ -143,7 +142,6 @@ export function PileWidget({ widget, live }: { widget: Widget; live: Live }) {
   /* ── 그리기 ── */
   const seen = useRef<{ reset: string; spawn: Map<string, number> }>({ reset: '', spawn: new Map() })
   const resetKey = `${arrange}|${money}|${unit}|${overflow}|${period}|${box?.w}x${box?.h}`
-  const neutral = ACCENTS[display.accent].neutral === true
 
   useEffect(() => {
     const cv = canvasRef.current
@@ -186,12 +184,20 @@ export function PileWidget({ widget, live }: { widget: Widget; live: Live }) {
     for (const k of s.spawn.keys()) if (!keys.has(k)) s.spawn.delete(k)
     if (fresh > 0 && display.pileSound) playMoney(freshCoin ? 'coin' : 'bill')
 
+    let tint: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null = null
+    if (display.pileColor === 'accent') {
+      const c = document.createElement('canvas')
+      c.width = cv.width
+      c.height = cv.height
+      const cctx = c.getContext('2d')
+      if (cctx) tint = { canvas: c, ctx: cctx }
+    }
+
     let raf = 0
     const frame = () => {
       const now = performance.now()
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, box.w, box.h)
-      if (scene.slots.length) drawSlots(ctx, scene.slots, scene.floor, theme, big)
       ctx.save()
       // 시간별 칸: 바닥 아래 이름 칸에는 안 그려지게
       ctx.beginPath()
@@ -214,11 +220,34 @@ export function PileWidget({ widget, live }: { widget: Widget; live: Live }) {
         ctx.restore()
       }
       ctx.restore()
+      if (tint) {
+        // 강조색 맞춤: 밝기(입체감)는 두고 색만 강조색으로 → 조각 모양대로 잘라냄
+        const copy = tint.canvas
+        const cctx = tint.ctx
+        cctx.setTransform(1, 0, 0, 1, 0, 0)
+        cctx.clearRect(0, 0, copy.width, copy.height)
+        cctx.drawImage(cv, 0, 0)
+        ctx.save()
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.globalCompositeOperation = 'color'
+        ctx.fillStyle = theme.accent
+        ctx.fillRect(0, 0, cv.width, cv.height)
+        ctx.globalCompositeOperation = 'destination-in'
+        ctx.drawImage(copy, 0, 0)
+        ctx.restore()
+      }
+      // 칸 배경·이름은 조각 뒤에 (색 맞춤의 영향 안 받게)
+      if (scene.slots.length) {
+        ctx.save()
+        ctx.globalCompositeOperation = 'destination-over'
+        drawSlots(ctx, scene.slots, scene.floor, theme, big)
+        ctx.restore()
+      }
       if (moving) raf = requestAnimationFrame(frame)
     }
     frame()
     return () => cancelAnimationFrame(raf)
-  }, [scene, box, resetKey, big, display.pileDrop, display.pileSound, display.theme, display.accent, display.font])
+  }, [scene, box, resetKey, big, display.pileDrop, display.pileSound, display.pileColor, display.theme, display.accent, display.font])
 
   /* ── 위쪽 글자 ── */
   const shown = DENOMS.filter((d) => (counts[d] ?? 0) > 0).sort((a, b) => b - a)
@@ -259,7 +288,6 @@ export function PileWidget({ widget, live }: { widget: Widget; live: Live }) {
         <canvas
           ref={canvasRef}
           className={css.pileCanvas}
-          style={{ filter: neutral ? 'grayscale(1)' : undefined }}
           role="img"
           aria-label={`${PERIOD_LABEL[period]} ${won(amount)}: ${summary}`}
         />

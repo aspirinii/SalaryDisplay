@@ -197,6 +197,26 @@ export function LookSection({ open, onEditLayout }: { open: boolean; onEditLayou
 
       <section className={css.section}>
         <h3>돈 쌓기 위젯</h3>
+        <fieldset className={css.field}>
+          <legend>동전·지폐 색</legend>
+          <div className={css.segmented}>
+            {(
+              [
+                ['real', '원래 색'],
+                ['accent', '강조색 맞춤'],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} role="radio" aria-checked={display.pileColor === id} onClick={() => update({ pileColor: id })}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className={css.hint}>
+            {display.pileColor === 'real'
+              ? '동전은 은색·구리색, 지폐는 파랑·주황·초록 — 강조색과 상관없이'
+              : `입체감은 그대로 두고 색만 강조색(${ACCENTS[display.accent].label})으로`}
+          </p>
+        </fieldset>
         <label className={css.toggle}>
           <input type="checkbox" checked={display.pileDrop} onChange={(e) => update({ pileDrop: e.target.checked })} />
           <span>새 동전·지폐가 위에서 떨어지는 애니메이션</span>

@@ -169,3 +169,11 @@ describe('상태 위젯 옮기기 (v3)', () => {
     expect(shape(PRESETS.hero.build())[0]).toBe('status:-:S')
   })
 })
+
+describe('돈 쌓기 색 옵션', () => {
+  it('기본은 원래 색, 잘못된 값도 원래 색', () => {
+    expect(sanitizeDisplay({}).pileColor).toBe('real')
+    expect(sanitizeDisplay({ pileColor: 'neon' }).pileColor).toBe('real')
+    expect(sanitizeDisplay({ pileColor: 'accent' }).pileColor).toBe('accent')
+  })
+})
