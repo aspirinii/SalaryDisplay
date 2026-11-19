@@ -11,6 +11,8 @@ const BILL_COLOR: Record<number, { base: string; dark: string; light: string }> 
   10000: { base: '#93bd85', dark: '#557d48', light: '#cde3c4' },
 }
 const COIN_COLOR: Record<number, { face: [string, string]; edge: string; ink: string }> = {
+  10: { face: ['#f0c3a0', '#b06a3e'], edge: '#8c5130', ink: '#5e3117' },
+  50: { face: ['#f1f2ee', '#b3b6b0'], edge: '#8d918a', ink: '#5a5e57' },
   100: { face: ['#eef0f2', '#a8adb3'], edge: '#868b91', ink: '#5d6268' },
   500: { face: ['#f6f5f1', '#b9b6ad'], edge: '#8f8b82', ink: '#625e55' },
 }
@@ -133,10 +135,17 @@ function bundle(ctx: CanvasRenderingContext2D, p: Extract<Piece, { shape: 'bundl
   ctx.restore()
 }
 
+/** 동전 롤 포장지 색 (단위별로 구분) */
+const ROLL_PAPER: Record<number, [string, string]> = {
+  10: ['#ecc9b4', '#7a4024'],
+  50: ['#d3e2cc', '#4b6440'],
+  100: ['#dccaa0', '#6f5a2c'],
+  500: ['#c8d5e6', '#4c5f7a'],
+}
+
 function roll(ctx: CanvasRenderingContext2D, p: Extract<Piece, { shape: 'roll' }>, font: string) {
   const ry = p.r * p.k
-  const paper = p.denom === 500 ? '#c8d5e6' : '#dccaa0'
-  const ink = p.denom === 500 ? '#4c5f7a' : '#6f5a2c'
+  const [paper, ink] = ROLL_PAPER[p.denom] ?? ROLL_PAPER[100]
   ctx.save()
   ctx.translate(p.x, p.y - ry)
   ctx.fillStyle = paper

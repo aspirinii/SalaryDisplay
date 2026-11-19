@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defaultSettings } from '../engine'
-import { breakdown, bundle, denomsFor, hourlySlots, planPile, totalPieces } from './money'
+import { breakdown, bundle, denomsFor, hourlySlots, planPile, slotValue, totalPieces } from './money'
 
 describe('금액 → 동전·지폐 개수', () => {
   it('한 가지 단위: 몫과 다음 1개 진행률', () => {
@@ -11,7 +11,7 @@ describe('금액 → 동전·지폐 개수', () => {
   })
 
   it('섞어서: 거스름돈처럼 큰 단위부터', () => {
-    const b = breakdown(54_749.4, denomsFor('mixed', 500))
+    const b = breakdown(54_749.4, denomsFor('mixed', 100))
     expect(b.counts).toEqual({ 10000: 5, 1000: 4, 500: 1, 100: 2 })
     expect(b.next).toBeCloseTo(0.494)
   })
@@ -19,6 +19,13 @@ describe('금액 → 동전·지폐 개수', () => {
   it('동전만 / 지폐만', () => {
     expect(breakdown(1_700, denomsFor('coins', 100)).counts).toEqual({ 500: 3, 100: 2 })
     expect(breakdown(17_999, denomsFor('bills', 100)).counts).toEqual({ 10000: 1, 5000: 1, 1000: 2 })
+  })
+
+  it('10원·50원: 섞을 때 가장 작은 단위까지', () => {
+    expect(breakdown(1_790, denomsFor('coins', 10)).counts).toEqual({ 500: 3, 100: 2, 50: 1, 10: 4 })
+    expect(denomsFor('mixed', 50)).toEqual([10000, 5000, 1000, 500, 100, 50])
+    // 지폐를 골라 둔 채 섞으면 100원부터
+    expect(Math.min(...denomsFor('mixed', 5000))).toBe(100)
   })
 
   it('0원·음수는 비어 있음', () => {
@@ -69,6 +76,14 @@ describe('시간별 칸', () => {
     expect(slots[1].amount).toBeCloseTo(slots[1].total / 2)
     expect(slots[2].amount).toBe(0)
   })
+  it('칸마다 새로 생긴 조각만 → 칸 합계 = 하루 전체 개수, 다음 1개 시점도 같음', () => {
+    const slots = hourlySlots(defaultSettings(), at(15, 20))
+    const per = slots.map((s) => slotValue(s, 100) / 100)
+    const day = slots.reduce((sum, s) => sum + s.amount, 0)
+    expect(per.reduce((a, b) => a + b, 0)).toBe(Math.floor(day / 100))
+    expect(slots[1].before).toBeCloseTo(slots[0].total)
+  })
+
   it('쉬는 날은 칸 없음', () => {
     expect(hourlySlots(defaultSettings(), new Date(2026, 10, 22, 10))).toEqual([])
   })

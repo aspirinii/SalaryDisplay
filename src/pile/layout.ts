@@ -48,7 +48,9 @@ export function metrics(width: number, scale = 1): Metrics {
   return { r, k: 0.42, t: r * 0.26, billW: r * 4.6, billH: r * 4.6 * 0.47, billT: Math.max(1, r * 0.09) }
 }
 
-const coinR = (m: Metrics, d: Denom) => (d === 500 ? m.r * 1.12 : m.r)
+/** 실제 지름 비율: 10원 18mm · 50원 21.6mm · 100원 24mm · 500원 26.5mm */
+const COIN_SIZE: Partial<Record<Denom, number>> = { 10: 0.75, 50: 0.9, 100: 1, 500: 1.1 }
+const coinR = (m: Metrics, d: Denom) => m.r * (COIN_SIZE[d] ?? 1)
 
 /* ───────────── 시드 난수 ───────────── */
 
@@ -199,14 +201,15 @@ export function neatPieces(groups: Group[], box: Box, m: Metrics, floor: number,
   }
   if (row.length) rows.push({ cells: row, depth: Math.max(...row.map((x) => x.depth)) })
 
+  // 나중에 채운 줄이 앞(바닥)에, 먼저 채운 줄은 뒤로 밀림 → 새로 생긴 것이 앞에 보임.
   // 뒷줄부터 그려야 앞줄이 위에 겹침
+  const ys: number[] = new Array(rows.length)
   let y = floor
-  const ys = rows.map((r) => {
-    const at = y
-    y -= r.depth * 0.8
-    return at
-  })
   for (let ri = rows.length - 1; ri >= 0; ri--) {
+    ys[ri] = y
+    y -= rows[ri].depth * 0.8
+  }
+  for (let ri = 0; ri < rows.length; ri++) {
     let x = padX + (ri % 2) * 3
     for (const c of rows[ri].cells) {
       c.draw(x, ys[ri])
@@ -237,7 +240,7 @@ export function heapPieces(groups: Group[], box: Box, m: Metrics, floor: number)
   const COL = Math.max(0.5, Math.min(2, m.r * 0.2))
   const cols = Math.max(1, Math.ceil(box.w / COL))
   const hm = new Float32Array(cols)
-  const pieces: Piece[] = []
+  const heap: Piece[] = []
   const pad = 6
   const span = (x: number, fw: number) => [Math.max(0, Math.floor(x / COL)), Math.min(cols - 1, Math.ceil((x + fw) / COL))]
   // 가운데 절반이 닿는 높이 (가장자리는 기울어 걸침)
@@ -249,7 +252,7 @@ export function heapPieces(groups: Group[], box: Box, m: Metrics, floor: number)
   }
 
   const all = units(groups)
-  // 롤·다발·자루는 바닥 가운데에 나란히 놓고, 낱개가 그 위·주변으로 쏟아짐
+  // 롤·다발·자루는 맨 앞 바닥에 나란히 (나중에 생긴 것일수록 오른쪽), 낱개 더미는 그 뒤에 쌓임
   const footprint = (u: Unit) => {
     const r = coinR(m, u.denom)
     if (isCoin(u.denom)) return u.kind === 'crate' ? r * 3 : r * 2
@@ -266,6 +269,9 @@ export function heapPieces(groups: Group[], box: Box, m: Metrics, floor: number)
     }
   }
 
+  const front: Piece[] = []
+  // 앞줄이 있으면 더미는 조금 뒤(화면 위)에
+  const heapFloor = placed.size ? floor - m.r * 2 * m.k * 0.9 : floor
   for (const u of all) {
     const key = unitKey('', u)
     const rand = rng(key)
@@ -301,15 +307,18 @@ export function heapPieces(groups: Group[], box: Box, m: Metrics, floor: number)
       x = lb === rb ? (rand() < 0.5 ? lx : rx) : lb < rb ? lx : rx
       base = low
     }
-    const [a, b] = span(x, fw)
-    const mid = (a + b) / 2
-    const half = Math.max(1, (b - a) / 2)
-    for (let i = a; i <= b; i++) {
-      const d = (i - mid) / half
-      hm[i] = Math.max(hm[i], base + inc * (1 - 0.45 * d * d))
+    if (fixed === undefined) {
+      const [a, b] = span(x, fw)
+      const mid = (a + b) / 2
+      const half = Math.max(1, (b - a) / 2)
+      for (let i = a; i <= b; i++) {
+        const d = (i - mid) / half
+        hm[i] = Math.max(hm[i], base + inc * (1 - 0.45 * d * d))
+      }
     }
     const cx = x + fw / 2
-    const bottom = floor - base
+    const bottom = fixed === undefined ? heapFloor - base : floor
+    const pieces = fixed === undefined ? heap : front
     if (u.kind === 'crate' && coin) {
       pieces.push({ shape: 'bag', key, denom: u.denom, x: cx, y: bottom, r: r * 1.5 })
     } else if (u.kind !== 'loose' && !coin) {
@@ -332,7 +341,8 @@ export function heapPieces(groups: Group[], box: Box, m: Metrics, floor: number)
       })
     }
   }
-  return pieces
+  // 앞줄(묶음)을 나중에 그려 더미 앞에 보이게
+  return [...heap, ...front]
 }
 
 /** 더미 상한: 쌓을 수 있는 부피 / 조각 하나 부피 */

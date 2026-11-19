@@ -8,9 +8,9 @@ import {
   hourlySlots,
   isCoin,
   planPile,
+  slotValue,
   recommendedUnit,
   DENOMS,
-  type Breakdown,
   type PilePlan,
 } from '../pile/money'
 import {
@@ -97,8 +97,9 @@ export function PileWidget({ widget, live }: { widget: Widget; live: Live }) {
       const r = Math.max(4, Math.min(base.r, (sw - 12) / 4.6))
       const m = metrics(box.w, r / base.r)
       const cap = neatCapacity({ w: sw, h: floor }, m, coinsOnly)
+      const smallest = denoms[denoms.length - 1]
       const plans = slots.map((s) =>
-        planPile(s.amount, { mode: money, unit, overflow: overflow === 'shrink' ? 'bundle' : overflow, cap }),
+        planPile(slotValue(s, smallest), { mode: money, unit, overflow: overflow === 'shrink' ? 'bundle' : overflow, cap }),
       )
       const key = `h|${box.w}x${box.h}|${slots.map((s, i) => `${s.label}:${s.state}:${s.total > 0}:${planKey(plans[i])}`).join(';')}`
       return { key, floor, area, plans, m, sw }
@@ -135,11 +136,9 @@ export function PileWidget({ widget, live }: { widget: Widget; live: Live }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneKey])
 
-  // 지금 칸(또는 기간 전체)에서 다음 1개
-  const nowSlot = slots?.findIndex((s) => s.state === 'now') ?? -1
-  const nextInfo: Breakdown =
-    arrange === 'hourly' && slots && nowSlot >= 0 ? breakdown(slots[nowSlot].amount, denoms) : breakdown(amount, denoms)
-  const counts = breakdown(amount, denoms).counts
+  // 다음 1개는 기간 전체 금액 기준 (시간별 칸도 같음 → 위젯끼리 같은 순간에 떨어짐)
+  const nextInfo = breakdown(amount, denoms)
+  const counts = nextInfo.counts
 
   /* ── 그리기 ── */
   const seen = useRef<{ reset: string; spawn: Map<string, number> }>({ reset: '', spawn: new Map() })

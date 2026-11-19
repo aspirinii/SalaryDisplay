@@ -5,9 +5,9 @@
 import { dayPeriod, earnedBetween, shiftsBetween, type Settings } from '../engine'
 import type { PeriodKey } from '../layout/widgets'
 
-export type Denom = 100 | 500 | 1000 | 5000 | 10000
-export const DENOMS: readonly Denom[] = [100, 500, 1000, 5000, 10000]
-export const COINS: readonly Denom[] = [100, 500]
+export type Denom = 10 | 50 | 100 | 500 | 1000 | 5000 | 10000
+export const DENOMS: readonly Denom[] = [10, 50, 100, 500, 1000, 5000, 10000]
+export const COINS: readonly Denom[] = [10, 50, 100, 500]
 export const BILLS: readonly Denom[] = [1000, 5000, 10000]
 export const isCoin = (d: Denom) => d < 1000
 
@@ -33,9 +33,18 @@ export function recommendedUnit(period: PeriodKey): Denom {
   return 10000
 }
 
-/** 쓰는 단위들, 큰 것부터 */
+/**
+ * 쓰는 단위들, 큰 것부터.
+ * 섞을 때(mixed·coins)는 unit이 "가장 작은 단위" (지폐를 골랐으면 100원부터).
+ */
 export function denomsFor(mode: MoneyMode, unit: Denom): Denom[] {
-  const list = mode === 'single' ? [unit] : mode === 'coins' ? COINS : mode === 'bills' ? BILLS : DENOMS
+  const smallest = isCoin(unit) ? unit : 100
+  const list =
+    mode === 'single'
+      ? [unit]
+      : mode === 'bills'
+        ? BILLS
+        : (mode === 'coins' ? COINS : DENOMS).filter((d) => d >= smallest)
   return [...list].sort((a, b) => b - a)
 }
 
@@ -164,6 +173,8 @@ export interface HourSlot {
   label: string
   /** 지금까지 이 칸에서 번 금액 */
   amount: number
+  /** 오늘 이 칸 전까지 번 금액 */
+  before: number
   /** 이 칸 전체 금액 (근무를 다 하면) — 0이면 쉬는 칸 */
   total: number
   state: 'past' | 'now' | 'future'
@@ -183,6 +194,7 @@ export function hourlySlots(settings: Settings, now: Date): HourSlot[] {
   const first = new Date(from)
   first.setMinutes(0, 0, 0)
   const slots: HourSlot[] = []
+  let before = earnedBetween(settings, day.start, Math.max(day.start, first.getTime()))
   for (let s = first.getTime(); s < to; s += HOUR) {
     const start = Math.max(s, from)
     const end = Math.min(s + HOUR, to)
@@ -193,9 +205,20 @@ export function hourlySlots(settings: Settings, now: Date): HourSlot[] {
       end,
       label: `${new Date(s).getHours()}시`,
       amount,
+      before,
       total,
       state: t >= end ? 'past' : t >= start ? 'now' : 'future',
     })
+    before += total
   }
   return slots
+}
+
+/**
+ * 칸에 쌓일 금액: 오늘 전체에서 이 시간 동안 "새로 생긴" 조각만큼.
+ * 칸마다 따로 세면 정각마다 다음 1개가 처음부터 다시 시작돼 다른 위젯과 어긋남.
+ */
+export function slotValue(slot: Pick<HourSlot, 'before' | 'amount'>, smallest: Denom): number {
+  const made = (v: number) => Math.floor(v / smallest + 1e-9)
+  return (made(slot.before + slot.amount) - made(slot.before)) * smallest
 }

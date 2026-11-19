@@ -19,6 +19,7 @@ import { SKINS } from '../skins/registry'
 import type { DisplayOptions } from '../store/display'
 import {
   ARRANGE_LABEL,
+  COINS,
   DENOMS,
   MONEY_LABEL,
   OVERFLOW_LABEL,
@@ -223,12 +224,24 @@ function PileOptions({
         />
         {money !== 'single' && (
           <small className={ed.hint}>
-            {money === 'mixed' && '거스름돈처럼 큰 단위부터: 만 원 → 5천 원 → 천 원 → 500원 → 100원'}
-            {money === 'coins' && '500원과 100원으로'}
+            {money === 'mixed' && '거스름돈처럼 큰 단위부터: 만 원 → 5천 원 → 천 원 → 500원 → … → 가장 작은 단위'}
+            {money === 'coins' && '500원부터 가장 작은 단위까지 동전으로'}
             {money === 'bills' && '만 원, 5천 원, 천 원으로'}
           </small>
         )}
       </div>
+      {(money === 'mixed' || money === 'coins') && (
+        <div className={ed.row}>
+          <span>가장 작은 단위</span>
+          <Seg<Denom>
+            label="가장 작은 단위"
+            value={unit < 1000 ? unit : 100}
+            options={COINS.map((d) => [d, `🪙 ${denomLabel(d)}`])}
+            onChange={(d) => onChange({ unit: d })}
+          />
+          <small className={ed.hint}>{every(unit < 1000 ? unit : 100, ratePerSecond)} — 이보다 작은 금액은 "다음 1개"로 표시</small>
+        </div>
+      )}
       {money === 'single' && (
         <div className={ed.row}>
           <span>단위</span>
