@@ -449,3 +449,31 @@
 .sheet .chipButton[aria-pressed='true'] {
   border-color: var(--fg);
 }
+.goldDot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  vertical-align: -1px;
+  border: 1px solid rgb(0 0 0 / 0.25);
+}
+
+/* 선택지가 많을 때: 칩처럼 줄바꿈 */
+.chipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chipGroup button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--card);
+  white-space: nowrap;
+}
+.chipGroup button[aria-checked='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { UpdateMode } from '../skins/digits'
+import { GOLD_STYLES, type GoldStyle, type GoldTone } from '../pile/gold'
 import {
   defaultWidgets,
   sanitizeWidgets,
@@ -42,6 +43,12 @@ export interface DisplayOptions {
   pileSound: boolean
   /** 돈 쌓기: 동전·지폐 색 — 원래 색 / 강조색 맞춤 */
   pileColor: 'real' | 'accent'
+  /** 황금 모드: 금 색 */
+  goldTone: GoldTone
+  /** 황금 모드: 금화 문양·바 각인 기본값 (위젯에서 따로 정할 수 있음) */
+  goldStyle: GoldStyle
+  /** 황금 모드: 반짝임 */
+  pileSparkle: boolean
   /** 첫 실행 안내를 마쳤거나 건너뜀 */
   onboarded: boolean
 }
@@ -60,6 +67,9 @@ export const defaultDisplay = (): DisplayOptions => ({
   pileDrop: true,
   pileSound: false,
   pileColor: 'real',
+  goldTone: 'gold',
+  goldStyle: 'basic',
+  pileSparkle: true,
   onboarded: false,
 })
 
@@ -108,6 +118,9 @@ export function sanitizeDisplay(raw: unknown): DisplayOptions {
     pileDrop: typeof r.pileDrop === 'boolean' ? r.pileDrop : d.pileDrop,
     pileSound: r.pileSound === true,
     pileColor: pick(r.pileColor, ['real', 'accent'] as const, d.pileColor),
+    goldTone: pick(r.goldTone, ['gold', 'rose', 'white'] as const, d.goldTone),
+    goldStyle: pick(r.goldStyle, GOLD_STYLES, d.goldStyle),
+    pileSparkle: typeof r.pileSparkle === 'boolean' ? r.pileSparkle : d.pileSparkle,
     onboarded: legacy || r.onboarded === true,
   }
 }

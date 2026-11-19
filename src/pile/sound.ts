@@ -12,7 +12,9 @@ function audio(): AudioContext | null {
   return ctx
 }
 
-export function playMoney(kind: 'coin' | 'bill') {
+export type MoneySound = 'coin' | 'bill' | 'gold' | 'bar'
+
+export function playMoney(kind: MoneySound) {
   const now = performance.now()
   if (now - last < 1000) return
   last = now
@@ -23,11 +25,38 @@ export function playMoney(kind: 'coin' | 'bill') {
   else void a.resume().then(() => emit(a, kind), () => {})
 }
 
-function emit(a: AudioContext, kind: 'coin' | 'bill') {
+function tone(a: AudioContext, out: AudioNode, t: number, f: number, d: number, peak = 0.6, type: OscillatorType = 'sine') {
+  const o = a.createOscillator()
+  const g = a.createGain()
+  o.type = type
+  o.frequency.value = f
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.004)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d)
+  o.connect(g).connect(out)
+  o.start(t)
+  o.stop(t + d + 0.02)
+}
+
+function emit(a: AudioContext, kind: MoneySound) {
   const t = a.currentTime
   const out = a.createGain()
   out.gain.value = 0.18
   out.connect(a.destination)
+  if (kind === 'gold') {
+    // 금화: 더 맑고 오래 울리는 "칭"
+    tone(a, out, t, 2093, 0.9, 0.5)
+    tone(a, out, t, 3136, 0.6, 0.35)
+    tone(a, out, t, 4186, 0.35, 0.2)
+    return
+  }
+  if (kind === 'bar') {
+    // 골드바: 묵직한 "쿵" + 짧은 금속 울림
+    tone(a, out, t, 90, 0.35, 0.9)
+    tone(a, out, t, 180, 0.2, 0.4, 'triangle')
+    tone(a, out, t + 0.01, 1568, 0.25, 0.12)
+    return
+  }
   if (kind === 'coin') {
     // 높은 금속음 두 겹이 빨리 사라짐
     for (const [f, d] of [

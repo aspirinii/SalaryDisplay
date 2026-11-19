@@ -11,6 +11,8 @@ import {
 } from '../store/display'
 import { SkinPreview } from './SkinPreview'
 import { playMoney, unlockSound } from '../pile/sound'
+import { GOLD_STYLES, GOLD_STYLE_NAME, GOLD_TONE_NAME, type GoldTone } from '../pile/gold'
+import { GOLD_PALETTE } from '../pile/drawGold'
 import css from './SettingsPanel.module.css'
 
 const THEMES: [ThemeId, string][] = [
@@ -217,6 +219,31 @@ export function LookSection({ open, onEditLayout }: { open: boolean; onEditLayou
               : `입체감은 그대로 두고 색만 강조색(${ACCENTS[display.accent].label})으로`}
           </p>
         </fieldset>
+        <fieldset className={css.field}>
+          <legend>✨ 황금 모드 — 금 색</legend>
+          <div className={css.segmented}>
+            {(Object.keys(GOLD_TONE_NAME) as GoldTone[]).map((id) => (
+              <button key={id} role="radio" aria-checked={display.goldTone === id} onClick={() => update({ goldTone: id })}>
+                <span className={css.goldDot} style={{ background: GOLD_PALETTE[id].mid }} aria-hidden /> {GOLD_TONE_NAME[id]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className={css.field}>
+          <legend>✨ 황금 모드 — 금화 문양·바 각인 (기본값)</legend>
+          <div className={css.chipGroup}>
+            {GOLD_STYLES.map((id) => (
+              <button key={id} role="radio" aria-checked={display.goldStyle === id} onClick={() => update({ goldStyle: id })}>
+                {GOLD_STYLE_NAME[id]}
+              </button>
+            ))}
+          </div>
+          <p className={css.hint}>실제 금화·제련소를 떠올리게 하는 모티프만 쓰고, 실제 도안·로고·이름은 쓰지 않아요</p>
+        </fieldset>
+        <label className={css.toggle}>
+          <input type="checkbox" checked={display.pileSparkle} onChange={(e) => update({ pileSparkle: e.target.checked })} />
+          <span>✨ 금이 가끔 반짝임 (숫자 갱신이 "연속"일 때만, 동작 줄이기 설정이면 꺼짐)</span>
+        </label>
         <label className={css.toggle}>
           <input type="checkbox" checked={display.pileDrop} onChange={(e) => update({ pileDrop: e.target.checked })} />
           <span>새 동전·지폐가 위에서 떨어지는 애니메이션</span>

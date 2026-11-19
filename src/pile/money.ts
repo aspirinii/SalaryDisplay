@@ -92,19 +92,26 @@ export interface Group {
 /**
  * 그릴 개수가 cap을 넘지 않게 묶음으로 합침.
  * 낱개를 최대한 남기도록 필요한 만큼만 묶음 (롤 → 그래도 넘치면 자루).
+ * cost = 묶음 하나가 차지하는 자리 (낱개 몇 개 분량). 차곡차곡에서는 묶음이 탑 하나만큼 자리를 차지.
  */
-export function bundle(denom: Denom, n: number, cap: number): Group {
-  const { pack, crate } = PACK[isCoin(denom) ? 'coin' : 'bill']
+export function bundle(
+  denom: Denom,
+  n: number,
+  cap: number,
+  sizes: { pack: number; crate: number; cost?: number } = PACK[isCoin(denom) ? 'coin' : 'bill'],
+): Group {
+  const { pack, crate } = sizes
+  const cost = Math.max(1, Math.min(sizes.cost ?? 1, pack - 1))
   const packsOnly = (m: number, budget: number): { packs: number; loose: number } | null => {
     if (m <= budget) return { packs: 0, loose: m }
-    const packs = Math.min(Math.ceil((m - budget) / (pack - 1)), Math.floor(m / pack))
+    const packs = Math.min(Math.ceil((m - budget) / (pack - cost)), Math.floor(m / pack))
     const loose = m - packs * pack
-    return packs <= budget / 2 && packs + loose <= budget ? { packs, loose } : null
+    return packs * cost <= budget / 2 && packs * cost + loose <= budget ? { packs, loose } : null
   }
   const simple = packsOnly(n, cap)
   if (simple) return { denom, crates: 0, ...simple }
   for (let crates = 1; crates * crate <= n; crates++) {
-    const rest = packsOnly(n - crates * crate, cap - crates)
+    const rest = packsOnly(n - crates * crate, cap - crates * cost)
     if (rest) return { denom, crates, ...rest }
   }
   const crates = Math.floor(n / crate)
@@ -119,6 +126,8 @@ export interface PileOptions {
   overflow: Overflow
   /** 그릴 수 있는 최대 개수 */
   cap: number
+  /** 묶음 크기 (황금 모드는 주머니·금고 크기가 다름). 없으면 원화 기준 */
+  packOf?: (d: Denom) => { pack: number; crate: number; cost?: number }
 }
 
 export interface PilePlan {
@@ -159,7 +168,7 @@ export function planPile(amount: number, opt: PileOptions): PilePlan {
     budget.set(d, give)
     left -= give
   })
-  const groups = denoms.map((d) => bundle(d, b.counts[d] ?? 0, budget.get(d) ?? 4))
+  const groups = denoms.map((d) => bundle(d, b.counts[d] ?? 0, budget.get(d) ?? 4, opt.packOf?.(d)))
   return { groups, scale, breakdown: b }
 }
 

@@ -4,6 +4,7 @@
  */
 import type { Denom } from './money'
 import type { Piece, SlotDecor } from './layout'
+import { bar, chest, dust, goldBag, goldCoin, safe, type GoldOpts } from './drawGold'
 
 const BILL_COLOR: Record<number, { base: string; dark: string; light: string }> = {
   1000: { base: '#86a9d6', dark: '#4d6f9c', light: '#c4d6ee' },
@@ -208,10 +209,13 @@ function bag(ctx: CanvasRenderingContext2D, p: Extract<Piece, { shape: 'bag' }>,
   ctx.restore()
 }
 
-export function drawPiece(ctx: CanvasRenderingContext2D, p: Piece, font: string) {
+const DEFAULT_GOLD: Omit<GoldOpts, 'font'> = { tone: 'gold', style: 'basic' }
+
+export function drawPiece(ctx: CanvasRenderingContext2D, p: Piece, font: string, gold: Omit<GoldOpts, 'font'> = DEFAULT_GOLD) {
+  const o: GoldOpts = { ...gold, font }
   switch (p.shape) {
     case 'coin':
-      return coin(ctx, p, font)
+      return p.gold ? goldCoin(ctx, p, o) : coin(ctx, p, font)
     case 'bill':
       return bill(ctx, p, font)
     case 'bundle':
@@ -219,7 +223,15 @@ export function drawPiece(ctx: CanvasRenderingContext2D, p: Piece, font: string)
     case 'roll':
       return roll(ctx, p, font)
     case 'bag':
-      return bag(ctx, p, font)
+      return p.gold ? goldBag(ctx, p, o) : bag(ctx, p, font)
+    case 'dust':
+      return dust(ctx, p, o)
+    case 'bar':
+      return bar(ctx, p, o)
+    case 'chest':
+      return chest(ctx, p, o)
+    case 'safe':
+      return safe(ctx, p, o)
   }
 }
 

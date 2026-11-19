@@ -30,6 +30,17 @@ import {
   type MoneyMode,
   type Overflow,
 } from '../pile/money'
+import {
+  GOLD_MAPS,
+  GOLD_NAME,
+  GOLD_PIECES,
+  GOLD_STYLES,
+  GOLD_STYLE_NAME,
+  goldPieceFor,
+  type GoldMapId,
+  type GoldPiece,
+  type GoldStyle,
+} from '../pile/gold'
 import ed from './editor.module.css'
 
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -201,8 +212,82 @@ function PileOptions({
   const money = widget.money ?? 'single'
   const unit = widget.unit ?? recommendedUnit(period)
   const arrange = widget.arrange ?? 'heap'
+  const gold = widget.material === 'gold'
+  const goldMap = widget.goldMap ?? 'tenUp'
+  const pieceName = (d: Denom) => GOLD_NAME[goldPieceFor(d, goldMap, widget.goldCustom)[0]]
   return (
     <>
+      <div className={ed.row}>
+        <span>표현</span>
+        <Seg<'won' | 'gold'>
+          label="표현"
+          value={gold ? 'gold' : 'won'}
+          options={[
+            ['won', '🪙 원화 동전·지폐'],
+            ['gold', '✨ 황금 (금화·골드바)'],
+          ]}
+          onChange={(v) => onChange(v === 'gold' ? { material: 'gold' } : { material: undefined, goldMap: undefined, goldCustom: undefined, goldStyle: undefined })}
+        />
+        {gold && <small className={ed.hint}>금액은 원화 그대로, 단위마다 금 조각으로 바꿔 보여줘요</small>}
+      </div>
+      {gold && (
+        <div className={ed.row}>
+          <span>바꾸는 표</span>
+          <Seg<GoldMapId>
+            label="바꾸는 표"
+            value={goldMap}
+            options={[
+              ...(Object.keys(GOLD_MAPS) as Exclude<GoldMapId, 'custom'>[]).map(
+                (id) => [id, `${GOLD_MAPS[id].name}${id === 'tenUp' ? ' ★' : ''}`] as [GoldMapId, string],
+              ),
+              ['custom', '직접 고르기'],
+            ]}
+            onChange={(m) =>
+              onChange(
+                m === 'custom'
+                  ? {
+                      goldMap: m,
+                      // 지금 표에서 시작
+                      goldCustom: Object.fromEntries(DENOMS.map((d) => [d, goldPieceFor(d, goldMap, widget.goldCustom)[0]])),
+                    }
+                  : { goldMap: m === 'tenUp' ? undefined : m, goldCustom: undefined },
+              )
+            }
+          />
+          {goldMap !== 'custom' && <small className={ed.hint}>{GOLD_MAPS[goldMap].description}</small>}
+          {goldMap === 'custom' && (
+            <div className={ed.goldGrid}>
+              {DENOMS.map((d) => (
+                <label key={d}>
+                  <span>{denomLabel(d)}</span>
+                  <select
+                    value={goldPieceFor(d, 'custom', widget.goldCustom)[0]}
+                    onChange={(e) => onChange({ goldCustom: { ...widget.goldCustom, [d]: e.target.value as GoldPiece } })}
+                  >
+                    {GOLD_PIECES.map((p) => (
+                      <option key={p} value={p}>
+                        {GOLD_NAME[p]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {gold && (
+        <div className={ed.row}>
+          <span>문양·각인</span>
+          <Seg<GoldStyle | 'default'>
+            label="문양·각인"
+            value={widget.goldStyle ?? 'default'}
+            options={[['default', '꾸미기 기본값'], ...GOLD_STYLES.map((st) => [st, GOLD_STYLE_NAME[st]] as [GoldStyle, string])]}
+            onChange={(v) => onChange({ goldStyle: v === 'default' ? undefined : v })}
+          />
+          <small className={ed.hint}>실제 금화·제련소를 떠올리게 하는 모티프만 쓰고, 실제 도안·로고·이름은 쓰지 않아요</small>
+        </div>
+      )}
       <div className={ed.row}>
         <span>쌓는 방식</span>
         <Seg<Arrange>
@@ -236,7 +321,7 @@ function PileOptions({
           <Seg<Denom>
             label="가장 작은 단위"
             value={unit < 1000 ? unit : 100}
-            options={COINS.map((d) => [d, `🪙 ${denomLabel(d)}`])}
+            options={COINS.map((d) => [d, gold ? `${denomLabel(d)} → ${pieceName(d)}` : `🪙 ${denomLabel(d)}`])}
             onChange={(d) => onChange({ unit: d })}
           />
           <small className={ed.hint}>{every(unit < 1000 ? unit : 100, ratePerSecond)} — 이보다 작은 금액은 "다음 1개"로 표시</small>
@@ -248,7 +333,10 @@ function PileOptions({
           <Seg<Denom>
             label="단위"
             value={unit}
-            options={DENOMS.map((d) => [d, `${d < 1000 ? '🪙' : '💵'} ${denomLabel(d)}${d === recommendedUnit(period) ? ' ★' : ''}`])}
+            options={DENOMS.map((d) => [
+              d,
+              `${gold ? '' : d < 1000 ? '🪙 ' : '💵 '}${denomLabel(d)}${gold ? ` → ${pieceName(d)}` : ''}${d === recommendedUnit(period) ? ' ★' : ''}`,
+            ])}
             onChange={(d) => onChange({ unit: d })}
           />
           <small className={ed.hint}>
@@ -283,6 +371,9 @@ const PILE_QUICK: [string, Partial<Widget>][] = [
   ['오늘 · 섞어서', { period: 'today', money: 'mixed', unit: 100, arrange: 'heap' }],
   ['이번 주 · 5천 원 차곡차곡', { period: 'week', unit: 5000, arrange: 'neat' }],
   ['이번 달 · 만 원 차곡차곡', { period: 'month', unit: 10000, arrange: 'neat' }],
+  ['✨ 오늘 · 금화 더미', { period: 'today', unit: 100, arrange: 'heap', material: 'gold', goldMap: 'allCoins' }],
+  ['✨ 오늘 · 골드바 피라미드', { period: 'today', unit: 1000, arrange: 'neat', material: 'gold' }],
+  ['✨ 이번 달 · 금괴 차곡차곡', { period: 'month', unit: 10000, arrange: 'neat', material: 'gold' }],
 ]
 
 export function AddWidgetSheet({

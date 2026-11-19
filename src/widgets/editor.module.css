@@ -420,3 +420,25 @@
   color: var(--muted);
   font-size: 12px;
 }
+.goldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px 10px;
+  margin-top: 8px;
+}
+.goldGrid label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 13px;
+}
+.goldGrid select {
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 4px;
+}

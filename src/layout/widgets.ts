@@ -4,6 +4,7 @@
  */
 
 import { DENOMS, recommendedUnit, type Arrange, type Denom, type MoneyMode, type Overflow } from '../pile/money'
+import { GOLD_PIECES, GOLD_STYLES, type GoldMapId, type GoldPiece, type GoldStyle } from '../pile/gold'
 
 export type WidgetType = 'counter' | 'progress' | 'status' | 'countdown' | 'clock' | 'pile'
 export type WidgetSize = 'S' | 'M' | 'L'
@@ -35,6 +36,14 @@ export interface Widget {
   arrange?: Arrange
   /** pile: 넘칠 때. 없으면 묶음 */
   overflow?: Overflow
+  /** pile: 원화 / 황금. 없으면 원화 */
+  material?: 'won' | 'gold'
+  /** pile 황금: 단위 → 금 조각 바꾸기 표. 없으면 tenUp */
+  goldMap?: GoldMapId
+  /** pile 황금: goldMap = custom일 때 단위별 금 조각 */
+  goldCustom?: Partial<Record<Denom, GoldPiece>>
+  /** pile 황금: 금화 문양·바 각인. 없으면 꾸미기 기본값 */
+  goldStyle?: GoldStyle
 }
 
 /** 기간이 있는 위젯 */
@@ -84,7 +93,7 @@ export function createWidget(type: WidgetType, patch: Partial<Widget> = {}): Wid
 
 /* ───────────── 배치 프리셋 ───────────── */
 
-export type PresetId = 'hero' | 'three' | 'minimal' | 'tanks' | 'piggy' | 'hourly' | 'dashboard'
+export type PresetId = 'hero' | 'three' | 'minimal' | 'tanks' | 'piggy' | 'hourly' | 'vault' | 'dashboard'
 
 export const PRESETS: Record<PresetId, { name: string; description: string; build: () => Widget[] }> = {
   hero: {
@@ -142,6 +151,17 @@ export const PRESETS: Record<PresetId, { name: string; description: string; buil
       createWidget('pile', { period: 'today', size: 'L', unit: 1000, arrange: 'hourly' }),
       createWidget('counter', { period: 'today', size: 'M' }),
       createWidget('counter', { period: 'month', size: 'M' }),
+    ],
+  },
+  vault: {
+    name: '금고',
+    description: '오늘 금화 더미 + 이번 달 골드바 피라미드 + 올해 금괴',
+    build: () => [
+      createWidget('status', { size: 'S' }),
+      createWidget('counter', { period: 'today', size: 'L' }),
+      createWidget('pile', { period: 'today', size: 'L', unit: 100, arrange: 'heap', material: 'gold', goldMap: 'allCoins' }),
+      createWidget('pile', { period: 'month', size: 'M', unit: 10000, arrange: 'neat', material: 'gold', goldMap: 'coinBill' }),
+      createWidget('pile', { period: 'year', size: 'M', unit: 10000, arrange: 'neat', material: 'gold' }),
     ],
   },
   dashboard: {
@@ -232,6 +252,21 @@ export function sanitizeWidget(raw: unknown): Widget | null {
     if (w.arrange === 'hourly') w.period = 'today'
     const overflow = pick(raw.overflow, ['bundle', 'exchange', 'shrink'] as const)
     if (overflow && overflow !== 'bundle') w.overflow = overflow
+    if (raw.material === 'gold') {
+      w.material = 'gold'
+      const map = pick(raw.goldMap, ['tenUp', 'coinBill', 'allCoins', 'custom'] as const)
+      if (map && map !== 'tenUp') w.goldMap = map
+      if (map === 'custom' && isObj(raw.goldCustom)) {
+        const custom: Partial<Record<Denom, GoldPiece>> = {}
+        for (const d of DENOMS) {
+          const p = pick((raw.goldCustom as Record<string, unknown>)[d], GOLD_PIECES)
+          if (p) custom[d] = p
+        }
+        w.goldCustom = custom
+      }
+      const style = pick(raw.goldStyle, GOLD_STYLES)
+      if (style) w.goldStyle = style
+    }
   }
   if (hasPeriod(type) && raw.showLabel === false) w.showLabel = false
   return w

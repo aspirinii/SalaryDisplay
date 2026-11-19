@@ -200,3 +200,10 @@
   height: 100%;
   display: block;
 }
+.nextIcon[data-gold] {
+  border-color: #c9971c;
+}
+.nextWon {
+  font-size: 11px;
+  opacity: 0.8;
+}
